@@ -21,6 +21,9 @@ namespace FactorioSave
         private Label lblStatus;
         private Panel panelHeader;
         private Panel panelSaveInfo;
+        private Panel panelGameStatus;
+        private Label lblGameStatus;
+        private System.Windows.Forms.Timer timerGameState;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -44,7 +47,7 @@ namespace FactorioSave
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-
+            
             // Form settings
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = AutoScaleMode.Font;
@@ -54,13 +57,13 @@ namespace FactorioSave
             this.MaximizeBox = false;
             this.StartPosition = FormStartPosition.CenterScreen;
             this.BackColor = Color.WhiteSmoke;
-
+            
             // Create header panel
             this.panelHeader = new Panel();
             this.panelHeader.BackColor = Color.FromArgb(41, 50, 65);
             this.panelHeader.Dock = DockStyle.Top;
             this.panelHeader.Height = 70;
-
+            
             // Create the title label
             this.lblTitle = new Label();
             this.lblTitle.Text = "Factorio Save Sync";
@@ -69,14 +72,14 @@ namespace FactorioSave
             this.lblTitle.AutoSize = true;
             this.lblTitle.Location = new Point(20, 20);
             this.panelHeader.Controls.Add(this.lblTitle);
-
+            
             // Create save info panel
             this.panelSaveInfo = new Panel();
             this.panelSaveInfo.BackColor = Color.White;
             this.panelSaveInfo.BorderStyle = BorderStyle.FixedSingle;
             this.panelSaveInfo.Size = new Size(560, 120);
             this.panelSaveInfo.Location = new Point(20, 90);
-
+            
             // Create the current save label
             this.lblCurrentSave = new Label();
             this.lblCurrentSave.Text = "Current Save: None";
@@ -85,7 +88,7 @@ namespace FactorioSave
             this.lblCurrentSave.AutoSize = true;
             this.lblCurrentSave.Location = new Point(10, 10);
             this.panelSaveInfo.Controls.Add(this.lblCurrentSave);
-
+            
             // Create the last modified label
             this.lblLastModified = new Label();
             this.lblLastModified.Text = "Last Modified: --";
@@ -94,7 +97,7 @@ namespace FactorioSave
             this.lblLastModified.AutoSize = true;
             this.lblLastModified.Location = new Point(10, 40);
             this.panelSaveInfo.Controls.Add(this.lblLastModified);
-
+            
             // Create the save path label
             this.lblSavePath = new Label();
             this.lblSavePath.Text = "Save Path: --";
@@ -104,7 +107,7 @@ namespace FactorioSave
             this.lblSavePath.MaximumSize = new Size(540, 50);
             this.lblSavePath.Location = new Point(10, 70);
             this.panelSaveInfo.Controls.Add(this.lblSavePath);
-
+            
             // Create the Select Save button
             this.btnSelectSaveFile = new Button();
             this.btnSelectSaveFile.Text = "Select Save File";
@@ -116,7 +119,7 @@ namespace FactorioSave
             this.btnSelectSaveFile.Font = new Font("Segoe UI", 10F);
             this.btnSelectSaveFile.Cursor = Cursors.Hand;
             this.btnSelectSaveFile.Click += new EventHandler(this.btnSelectSaveFile_Click);
-
+            
             // Create the Download from Drive button
             this.btnDownloadFromDrive = new Button();
             this.btnDownloadFromDrive.Text = "Download from Drive";
@@ -128,7 +131,7 @@ namespace FactorioSave
             this.btnDownloadFromDrive.Font = new Font("Segoe UI", 10F);
             this.btnDownloadFromDrive.Cursor = Cursors.Hand;
             this.btnDownloadFromDrive.Click += new EventHandler(this.btnDownloadFromDrive_Click);
-
+            
             // Create the status label
             this.lblStatus = new Label();
             this.lblStatus.Text = "Status: Ready";
@@ -136,15 +139,36 @@ namespace FactorioSave
             this.lblStatus.AutoSize = true;
             this.lblStatus.ForeColor = Color.FromArgb(80, 80, 80);
             this.lblStatus.Location = new Point(20, 350);
-
+            
+            // Create game status panel
+            this.panelGameStatus = new Panel();
+            this.panelGameStatus.Size = new Size(560, 40);
+            this.panelGameStatus.Location = new Point(20, 290);
+            this.panelGameStatus.BorderStyle = BorderStyle.FixedSingle;
+            
+            // Create game status label
+            this.lblGameStatus = new Label();
+            this.lblGameStatus.Text = "Factorio: Not Running";
+            this.lblGameStatus.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            this.lblGameStatus.AutoSize = true;
+            this.lblGameStatus.Location = new Point(10, 9);
+            this.lblGameStatus.ForeColor = Color.DarkRed;
+            this.panelGameStatus.Controls.Add(this.lblGameStatus);
+            
+            // Create timer for checking game state
+            this.timerGameState = new System.Windows.Forms.Timer();
+            this.timerGameState.Interval = 2000; // Check every 2 seconds
+            //this.timerGameState.Tick += new EventHandler(this.timerGameState_Tick);
+            
             // Add all controls to the form
             this.Controls.Add(this.panelHeader);
             this.Controls.Add(this.panelSaveInfo);
             this.Controls.Add(this.btnSelectSaveFile);
             this.Controls.Add(this.btnDownloadFromDrive);
+            this.Controls.Add(this.panelGameStatus);
             this.Controls.Add(this.lblStatus);
         }
-
+        
         #endregion
     }
 

@@ -1,6 +1,6 @@
-﻿using FactorioSave;
-using System;
+﻿using System;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -23,12 +23,19 @@ namespace FactorioSave
 
             // Subscribe to the FactorioClosed event
             _factorioMonitor.FactorioClosed += OnFactorioClosed;
+            _factorioMonitor.FactorioOpened += OnFactorioOpened;
 
             // Start monitoring for Factorio
             _factorioMonitor.StartMonitoring();
 
+            timerGameState.Start();
+
+
             // Update the UI with the current save file name
             UpdateSaveFileDisplay();
+
+            UpdateGameStatusDisplay();
+
         }
 
         // This method runs when the form is being closed
@@ -36,6 +43,9 @@ namespace FactorioSave
         {
             // Stop the monitoring service
             _factorioMonitor.StopMonitoring();
+
+            timerGameState.Stop();
+
 
             // Call the base class method
             base.OnFormClosing(e);
@@ -48,6 +58,14 @@ namespace FactorioSave
             // and we want to update the UI, which must be done on the UI thread
             Invoke(new Action(() => {
                 ShowSyncPrompt();
+                UpdateGameStatusDisplay();
+            }));
+        }
+
+        private void OnFactorioOpened(object sender, EventArgs e)
+        {
+            Invoke(new Action(() => {
+                UpdateGameStatusDisplay();
             }));
         }
 
@@ -147,7 +165,7 @@ namespace FactorioSave
                 if (File.Exists(savePath))
                 {
                     DateTime lastModified = File.GetLastWriteTime(savePath);
-                    lblLastModified.Text = $"Last Modified: {lastModified.ToString("dd.MM.yyyy HH:mm:ss")}";
+                    lblLastModified.Text = $"Last Modified: {lastModified.ToString("yyyy-MM-dd HH:mm:ss")}";
                 }
                 else
                 {
@@ -236,6 +254,33 @@ namespace FactorioSave
                     MessageBoxIcon.Error);
 
                 lblStatus.Text = "Status: Download failed.";
+            }
+        }
+
+        // Timer tick event handler to update game status
+        private void OnTimerGameStateTick(object sender, EventArgs e)
+        {
+            UpdateGameStatusDisplay();
+        }
+
+        // Updates the game status indicator
+        private void UpdateGameStatusDisplay()
+        {
+            bool isRunning = _factorioMonitor.isRunning;
+
+            if (isRunning)
+            {
+                // Update text and color for running state
+                lblGameStatus.Text = "Factorio: Running";
+                lblGameStatus.ForeColor = Color.DarkGreen;
+                panelGameStatus.BackColor = Color.FromArgb(220, 255, 220); // Light green
+            }
+            else
+            {
+                // Update text and color for not running state
+                lblGameStatus.Text = "Factorio: Not Running";
+                lblGameStatus.ForeColor = Color.DarkRed;
+                panelGameStatus.BackColor = Color.FromArgb(255, 220, 220); // Light red
             }
         }
     }

@@ -14,11 +14,14 @@ namespace FactorioSave
 
         // Event that fires when Factorio closes
         public event EventHandler FactorioClosed;
+        public event EventHandler FactorioOpened;
+
 
         // Flag to indicate if monitoring is active
         private string _saveFileName = "sayvGameTolyanSpAge.zip";
         private bool _isMonitoring;
         private CancellationTokenSource _cancellationTokenSource;
+        private bool _isRunning;
 
         public string SaveFileName
         {
@@ -26,10 +29,16 @@ namespace FactorioSave
             set { _saveFileName = value; }
         }
 
+        public bool isRunning
+        {
+            get { return _isRunning; }
+        }
+
         // Constructor
         public FactorioMonitor()
         {
             _isMonitoring = false;
+            _isRunning = IsFactorioRunning();
         }
 
         
@@ -70,15 +79,19 @@ namespace FactorioSave
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                bool factorioIsRunning = IsFactorioRunning();
+                _isRunning = IsFactorioRunning();
 
                 // Detect when Factorio closes
-                if (factorioWasRunning && !factorioIsRunning)
+                if (factorioWasRunning && !_isRunning)
                 {
                     OnFactorioClosed();
                 }
+                if(!factorioWasRunning && _isRunning)
+                {
+                    OnFactorioOpened();
+                }
 
-                factorioWasRunning = factorioIsRunning;
+                factorioWasRunning = _isRunning;
 
                 // Wait a bit before checking again
                 await Task.Delay(2000, cancellationToken).ConfigureAwait(false);
@@ -89,6 +102,11 @@ namespace FactorioSave
         private void OnFactorioClosed()
         {
             FactorioClosed?.Invoke(this, EventArgs.Empty);
+        }
+        
+        private void OnFactorioOpened()
+        {
+            FactorioOpened?.Invoke(this, EventArgs.Empty);
         }
 
         public string GetFactorioSavesDirectory()
