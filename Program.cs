@@ -16,7 +16,7 @@ namespace FactorioSave
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForrm());
+            Application.Run(new MainForm());
         }
     }
 }

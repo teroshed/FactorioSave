@@ -16,7 +16,7 @@ namespace FactorioSave
         public event EventHandler FactorioClosed;
 
         // Flag to indicate if monitoring is active
-        private string _saveFileName = "sayvGameTolyanSpAge";
+        private string _saveFileName = "sayvGameTolyanSpAge.zip";
         private bool _isMonitoring;
         private CancellationTokenSource _cancellationTokenSource;
 
@@ -93,21 +93,30 @@ namespace FactorioSave
 
         public string GetFactorioSavesDirectory()
         {
-            // Default locations by OS
-            string savePath = Environment.OSVersion.Platform switch
+            string savePath;
+
+            // Traditional switch statement for C# 7.3
+            switch (Environment.OSVersion.Platform)
             {
-                PlatformID.Win32NT => Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "Factorio", "saves", _saveFileName),
-                PlatformID.Unix => Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                    ".factorio", "saves", _saveFileName),
-                _ => throw new PlatformNotSupportedException("Your OS is not supported.")
-            };
+                case PlatformID.Win32NT:
+                    savePath = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                        "Factorio", "saves", _saveFileName);
+                    break;
+
+                case PlatformID.Unix:
+                    savePath = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                        ".factorio", "saves", _saveFileName);
+                    break;
+
+                default:
+                    throw new PlatformNotSupportedException("Your OS is not supported.");
+            }
 
             return savePath;
         }
 
-        
+
     }
 }
