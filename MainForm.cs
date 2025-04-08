@@ -12,6 +12,11 @@ namespace FactorioSave
         // Reference to our Factorio monitoring service
         private readonly FactorioMonitor _factorioMonitor;
 
+
+        private DateTime _lastActionTime = DateTime.MinValue;
+        private string _lastActionType = "None";
+        private System.Windows.Forms.Timer _timerUpdateLastAction;
+
         // Constructor - this runs when the form is created
         public MainForm()
         {
@@ -23,20 +28,30 @@ namespace FactorioSave
 
             // Subscribe to the FactorioClosed event
             _factorioMonitor.FactorioClosed += OnFactorioClosed;
-            _factorioMonitor.FactorioOpened += OnFactorioOpened;
 
             // Start monitoring for Factorio
             _factorioMonitor.StartMonitoring();
 
+            // Start the game state timer
             timerGameState.Start();
 
+            // Initialize the timer to update the "Last Action" time display
+            _timerUpdateLastAction = new System.Windows.Forms.Timer(this.components);
+            _timerUpdateLastAction.Interval = 30000; // Update every 30 seconds
+            _timerUpdateLastAction.Tick += new EventHandler(OnTimerUpdateLastAction);
+            _timerUpdateLastAction.Start();
 
             // Update the UI with the current save file name
             UpdateSaveFileDisplay();
 
+            // Update game status initially
             UpdateGameStatusDisplay();
 
+            // Initialize last action display
+            UpdateLastActionDisplay();
         }
+
+        
 
         // This method runs when the form is being closed
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -45,6 +60,7 @@ namespace FactorioSave
             _factorioMonitor.StopMonitoring();
 
             timerGameState.Stop();
+            _timerUpdateLastAction.Stop();
 
 
             // Call the base class method
@@ -165,7 +181,7 @@ namespace FactorioSave
                 if (File.Exists(savePath))
                 {
                     DateTime lastModified = File.GetLastWriteTime(savePath);
-                    lblLastModified.Text = $"Last Modified: {lastModified.ToString("yyyy-MM-dd HH:mm:ss")}";
+                    lblLastModified.Text = $"Last Modified: {lastModified.ToString("dd.MM.yyyy HH:mm:ss")}";
                 }
                 else
                 {
@@ -214,6 +230,9 @@ namespace FactorioSave
                 // This is just a placeholder for now
                 await Task.Delay(2000); // Simulate network delay
 
+                // Record the upload action
+                RecordSyncAction("Upload");
+
                 // Update status and UI
                 lblStatus.Text = "Status: Upload successful!";
 
@@ -232,18 +251,36 @@ namespace FactorioSave
             }
         }
 
+
         // Downloads the save from Google Drive
         private async void btnDownloadFromDrive_Click(object sender, EventArgs e)
         {
             try
             {
+                // Check if a save file is selected
+                if (string.IsNullOrEmpty(_factorioMonitor.SaveFileName) || _factorioMonitor.SaveFileName == "None")
+                {
+                    MessageBox.Show(
+                        "Please select a save file name first.",
+                        "No Save Selected",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
                 lblStatus.Text = "Status: Downloading from Google Drive...";
 
                 // TODO: Implement Google Drive integration
                 // This is just a placeholder for now
                 await Task.Delay(2000); // Simulate network delay
 
+                // Record the download action
+                RecordSyncAction("Download");
+
                 lblStatus.Text = "Status: Download successful!";
+
+                // Refresh the information display
+                UpdateSaveFileDisplay();
             }
             catch (Exception ex)
             {
@@ -261,12 +298,13 @@ namespace FactorioSave
         private void OnTimerGameStateTick(object sender, EventArgs e)
         {
             UpdateGameStatusDisplay();
+            UpdateLastActionDisplay();
         }
 
         // Updates the game status indicator
         private void UpdateGameStatusDisplay()
         {
-            bool isRunning = _factorioMonitor.isRunning;
+            bool isRunning = _factorioMonitor.IsFactorioRunning();
 
             if (isRunning)
             {
@@ -283,5 +321,72 @@ namespace FactorioSave
                 panelGameStatus.BackColor = Color.FromArgb(255, 220, 220); // Light red
             }
         }
+
+        // Updates the last action display with time elapsed
+        private void UpdateLastActionDisplay()
+        {
+            if (_lastActionTime == DateTime.MinValue)
+            {
+                lblLastAction.Text = "No sync actions yet";
+                return;
+            }
+
+            // Calculate the time difference
+            TimeSpan elapsed = DateTime.Now - _lastActionTime;
+            string timeText;
+
+            // Format the elapsed time in a human-readable way
+            if (elapsed.TotalDays > 3)
+            {
+                // For more than 3 days, show the actual date
+                timeText = _lastActionTime.ToString("yyyy-MM-dd HH:mm");
+            }
+            else if (elapsed.TotalDays >= 1)
+            {
+                // For 1-3 days
+                int days = (int)Math.Floor(elapsed.TotalDays);
+                timeText = $"{days} day{(days > 1 ? "s" : "")} ago";
+            }
+            else if (elapsed.TotalHours >= 1)
+            {
+                // For hours
+                int hours = (int)Math.Floor(elapsed.TotalHours);
+                timeText = $"{hours} hour{(hours > 1 ? "s" : "")} ago";
+            }
+            else if (elapsed.TotalMinutes >= 1)
+            {
+                // For minutes
+                int minutes = (int)Math.Floor(elapsed.TotalMinutes);
+                timeText = $"{minutes} minute{(minutes > 1 ? "s" : "")} ago";
+            }
+            else
+            {
+                // For seconds
+                int seconds = (int)Math.Floor(elapsed.TotalSeconds);
+                timeText = $"{seconds} second{(seconds > 1 ? "s" : "")} ago";
+            }
+
+            // Update the label
+            lblLastAction.Text = $"Last {_lastActionType}: {timeText}";
+        }
+
+        // Timer tick handler to update the last action time display
+        private void OnTimerUpdateLastAction(object sender, EventArgs e)
+        {
+            UpdateLastActionDisplay();
+        }
+
+        // Records a new sync action
+        private void RecordSyncAction(string actionType)
+        {
+            _lastActionTime = DateTime.Now;
+            _lastActionType = actionType;
+            UpdateLastActionDisplay();
+        }       
+        // Timer tick event handler to update game status
+        
+
+        // Updates the game status indicator
+        
     }
 }
