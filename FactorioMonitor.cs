@@ -113,7 +113,6 @@ namespace FactorioSave
         {
             string savePath;
 
-            // Traditional switch statement for C# 7.3
             switch (Environment.OSVersion.Platform)
             {
                 case PlatformID.Win32NT:
