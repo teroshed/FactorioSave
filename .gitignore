@@ -1,2 +1,6 @@
 # Ignore credentials
 credentials.json
+# Editor directories and files
+.vscode/*
+.vs/*
+!.vscode/extensions.json

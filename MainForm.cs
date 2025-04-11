@@ -11,6 +11,7 @@ namespace FactorioSave
     {
         // Reference to our Factorio monitoring service
         private readonly FactorioMonitor _factorioMonitor;
+        private readonly GoogleDriveService _googleDriveService;
 
 
         private DateTime _lastActionTime = DateTime.MinValue;
@@ -29,17 +30,26 @@ namespace FactorioSave
             // Subscribe to the FactorioClosed event
             _factorioMonitor.FactorioClosed += OnFactorioClosed;
 
+            
+
             // Start monitoring for Factorio
             _factorioMonitor.StartMonitoring();
 
             // Start the game state timer
             timerGameState.Start();
 
+
+
             // Initialize the timer to update the "Last Action" time display
             _timerUpdateLastAction = new System.Windows.Forms.Timer(this.components);
             _timerUpdateLastAction.Interval = 30000; // Update every 30 seconds
             _timerUpdateLastAction.Tick += new EventHandler(OnTimerUpdateLastAction);
             _timerUpdateLastAction.Start();
+
+
+            _googleDriveService = new GoogleDriveService();
+            _googleDriveService.InitializeAsync();
+
 
             // Update the UI with the current save file name
             UpdateSaveFileDisplay();

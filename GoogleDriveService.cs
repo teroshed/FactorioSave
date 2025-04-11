@@ -8,6 +8,8 @@ using Google.Apis.Drive.v3;
 using Google.Apis.Drive.v3.Data;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
+using Newtonsoft.Json;
+using System.Windows.Forms;
 
 namespace FactorioSave
 {
@@ -34,6 +36,7 @@ namespace FactorioSave
         /// </summary>
         public async Task<bool> InitializeAsync()
         {
+            Console.WriteLine("Initializing Google Drive service...");
             try
             {
                 // If already initialized, return true
@@ -47,14 +50,35 @@ namespace FactorioSave
                 // You should replace these with your actual credentials
                 string appDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
                 string credentialsPath = Path.Combine(appDirectory, "credentials.json");
+                //TODO Wrong path..
+                Console.WriteLine("Credentials path: " + credentialsPath); 
+
+                //Open up a messagebox that prompts the user the credentials
+
+
+                //Read json file 
+                if (!System.IO.File.Exists(credentialsPath))
+                {
+                    Console.WriteLine("Credentials file not found.");
+                    return false;
+                }
                 
+                string jsonText = System.IO.File.ReadAllText(credentialsPath);
+                dynamic credentials = JsonConvert.DeserializeObject(jsonText);
 
 
                 var clientSecrets = new ClientSecrets
                 {
-                    ClientId = "YOUR_CLIENT_ID_HERE",
-                    ClientSecret = "YOUR_CLIENT_SECRET_HERE"
+                    ClientId = credentials.ClientId,
+                    ClientSecret = credentials.ClientSecret
                 };
+
+                MessageBox.Show(
+                        $"{credentials.ClientId}, {credentials.ClientSecret} ",
+                        "Title probably",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                
 
                 // Path where the token will be stored
                 string tokenFolderPath = Path.Combine(
