@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Drive.v3;
 using Google.Apis.Drive.v3.Data;
+
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
 using Newtonsoft.Json;
@@ -17,6 +18,7 @@ namespace FactorioSave
     {
         // The Drive API service
         private DriveService _driveService;
+        private UserCredential _credential;
 
         // The name of the folder in Google Drive where saves will be stored
         private const string FACTORIO_FOLDER_NAME = "FactorioSaves";
@@ -24,11 +26,13 @@ namespace FactorioSave
         // The ID of the Factorio saves folder in Google Drive
         private string _factorioFolderId;
 
+        
         // Constructor
         public GoogleDriveService()
         {
             _driveService = null;
             _factorioFolderId = null;
+            _credential = null;   
         }
 
         /// <summary>
@@ -45,42 +49,6 @@ namespace FactorioSave
 
                 // Define the scopes for the Drive API
                 string[] scopes = { DriveService.Scope.DriveFile };
-
-                // The ClientId and ClientSecret would be from your Google Cloud project
-                // You should replace these with your actual credentials
-                string appDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-                string credentialsPath = Path.Combine(appDirectory, "credentials.json");
-                //TODO Wrong path..
-                Console.WriteLine("Credentials path: " + credentialsPath); 
-
-                //Open up a messagebox that prompts the user the credentials
-
-
-                //Read json file 
-                if (!System.IO.File.Exists(credentialsPath))
-                {
-                    Console.WriteLine("Credentials file not found.");
-                    return false;
-                }
-                
-                string jsonText = System.IO.File.ReadAllText(credentialsPath);
-                dynamic credentials = JsonConvert.DeserializeObject(jsonText);
-
-
-                var clientSecrets = new ClientSecrets
-                {
-                    ClientId = credentials.ClientId,
-                    ClientSecret = credentials.ClientSecret
-                };
-
-                MessageBox.Show(
-                        $"{credentials.ClientId}, {credentials.ClientSecret} ",
-                        "Title probably",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
-                
-
-                // Path where the token will be stored
                 string tokenFolderPath = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                     "FactorioSaveSync");
@@ -89,23 +57,54 @@ namespace FactorioSave
                 if (!Directory.Exists(tokenFolderPath))
                     Directory.CreateDirectory(tokenFolderPath);
 
-                // Get user credential and save it
-                var credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-                    clientSecrets,
-                    scopes,
-                    "user",
-                    CancellationToken.None,
-                    new FileDataStore(tokenFolderPath, true));
+                // The ClientId and ClientSecret would be from your Google Cloud project
+                // You should replace these with your actual credentials
+                string appDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                string projectRoot = Path.GetFullPath(Path.Combine(appDirectory, "..", ".."));
+                string credentialsPath = Path.Combine(projectRoot, "client_secrets.json");
+                //TODO Wrong path..
+                System.Diagnostics.Debug.WriteLine("Credentials path: " + credentialsPath);
+
+                using (var stream = new FileStream(credentialsPath, FileMode.Open, FileAccess.Read))
+                {
+                    _credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+                        GoogleClientSecrets.Load(stream).Secrets,
+                        scopes,
+                        "user", CancellationToken.None, new FileDataStore(tokenFolderPath, true));
+                }
 
                 // Create the Drive API service
                 _driveService = new DriveService(new BaseClientService.Initializer()
                 {
-                    HttpClientInitializer = credential,
+                    HttpClientInitializer = _credential,
                     ApplicationName = "Factorio Save Sync"
                 });
 
                 // Ensure our Factorio saves folder exists in Drive
                 await EnsureFactorioFolderExistsAsync();
+
+
+                System.Diagnostics.Debug.WriteLine("Here");
+
+
+
+                
+
+
+                
+
+                
+                
+
+                
+
+                
+
+                
+
+                
+
+                
 
                 return true;
             }
@@ -255,6 +254,8 @@ namespace FactorioSave
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"Uploading save {saveFilePath}");
+
                 // Ensure the service is initialized
                 if (_driveService == null)
                 {

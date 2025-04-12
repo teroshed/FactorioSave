@@ -61,7 +61,13 @@ namespace FactorioSave
             UpdateLastActionDisplay();
         }
 
-        
+
+        private void btnUploadToDrive_Click(object sender, EventArgs e)
+        {
+            // Call the existing upload method
+            UploadSaveToGoogleDrive();
+        }
+
 
         // This method runs when the form is being closed
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -166,14 +172,18 @@ namespace FactorioSave
             }
         }
 
+
+
         // Updates the UI showing the current save file information
-        private void UpdateSaveFileDisplay()
+
+        private async void UpdateSaveFileDisplay()
         {
             // Check if we have a save file selected
             if (string.IsNullOrEmpty(_factorioMonitor.SaveFileName) || _factorioMonitor.SaveFileName == "None")
             {
                 lblCurrentSave.Text = "Current Save: None";
-                lblLastModified.Text = "Last Modified: --";
+                lblLastModified.Text = "Last Modified (Local): --";
+                lblDriveLastModified.Text = "Last Modified (Drive): --";
                 lblSavePath.Text = "Save Path: --";
                 return;
             }
@@ -185,23 +195,51 @@ namespace FactorioSave
             string savePath = _factorioMonitor.GetFactorioSavesDirectory();
             lblSavePath.Text = $"Save Path: {savePath}";
 
-            // Check if the file exists and get its last modified time
+            // Check if the file exists locally and get its last modified time
             try
             {
                 if (File.Exists(savePath))
                 {
                     DateTime lastModified = File.GetLastWriteTime(savePath);
-                    lblLastModified.Text = $"Last Modified: {lastModified.ToString("dd.MM.yyyy HH:mm:ss")}";
+                    lblLastModified.Text = $"Last Modified (Local): {lastModified.ToString("yyyy-MM-dd HH:mm:ss")}";
                 }
                 else
                 {
-                    lblLastModified.Text = "Last Modified: File not found";
+                    lblLastModified.Text = "Last Modified (Local): File not found";
                 }
             }
             catch (Exception ex)
             {
-                lblLastModified.Text = "Last Modified: Error reading file info";
-                Console.WriteLine($"Error getting file information: {ex.Message}");
+                lblLastModified.Text = "Last Modified (Local): Error reading file info";
+                System.Diagnostics.Debug.WriteLine($"Error getting local file information: {ex.Message}");
+            }
+
+            // Check Google Drive for the same file's modification time
+            try
+            {
+                // Only attempt to get Drive info if the service is initialized and we have a file name
+                if (_googleDriveService != null && !string.IsNullOrEmpty(_factorioMonitor.SaveFileName))
+                {
+                    var driveFileInfo = await _googleDriveService.GetSaveFilesListAsync();
+                    
+                    System.Diagnostics.Debug.WriteLine($"Drive file info: {driveFileInfo}");
+
+                    /**
+                    if (driveFileInfo != null && driveFileInfo.ModifiedTime.HasValue)
+                    {
+                        lblDriveLastModified.Text = $"Last Modified (Drive): {driveFileInfo.ModifiedTime.Value.ToString("yyyy-MM-dd HH:mm:ss")}";
+                    }
+                    else
+                    {
+                        lblDriveLastModified.Text = "Last Modified (Drive): Not found on Drive";
+                    }
+                    */
+                }
+            }
+            catch (Exception ex)
+            {
+                lblDriveLastModified.Text = "Last Modified (Drive): Error reading Drive info";
+                System.Diagnostics.Debug.WriteLine($"Error getting Drive file information: {ex.Message}");
             }
         }
 
@@ -210,6 +248,8 @@ namespace FactorioSave
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine("Uploading save to google drive..");
+
                 // Check if a save file is selected
                 if (string.IsNullOrEmpty(_factorioMonitor.SaveFileName) || _factorioMonitor.SaveFileName == "None")
                 {
@@ -238,7 +278,7 @@ namespace FactorioSave
 
                 // TODO: Implement Google Drive integration
                 // This is just a placeholder for now
-                await Task.Delay(2000); // Simulate network delay
+                await _googleDriveService.UploadSaveAsync(savePath);  
 
                 // Record the upload action
                 RecordSyncAction("Upload");
@@ -282,7 +322,7 @@ namespace FactorioSave
 
                 // TODO: Implement Google Drive integration
                 // This is just a placeholder for now
-                await Task.Delay(2000); // Simulate network delay
+                await _googleDriveService.DownloadSaveAsync(_factorioMonitor.SaveFileName, _factorioMonitor.GetFactorioSavesDirectory());
 
                 // Record the download action
                 RecordSyncAction("Download");

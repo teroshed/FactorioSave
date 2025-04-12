@@ -1,5 +1,6 @@
 # Ignore credentials
 credentials.json
+client_secrets.json
 # Editor directories and files
 .vscode/*
 .vs/*

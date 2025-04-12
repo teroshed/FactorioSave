@@ -12,12 +12,14 @@ namespace FactorioSave
         private System.ComponentModel.IContainer components = null;
 
         // UI Components
+        // UI Components
         private Label lblTitle;
         private Label lblCurrentSave;
         private Label lblLastModified;
         private Label lblSavePath;
         private Button btnSelectSaveFile;
         private Button btnDownloadFromDrive;
+        private Button btnUploadToDrive;
         private Label lblStatus;
         private Panel panelHeader;
         private Panel panelSaveInfo;
@@ -26,6 +28,7 @@ namespace FactorioSave
         private System.Windows.Forms.Timer timerGameState;
         private Panel panelLastAction;
         private Label lblLastAction;
+        private Label lblDriveLastModified;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -40,7 +43,6 @@ namespace FactorioSave
             base.Dispose(disposing);
         }
 
-        #region Windows Form Designer generated code
 
         /// <summary>
         /// Required method for Designer support - do not modify
@@ -80,7 +82,7 @@ namespace FactorioSave
             this.panelSaveInfo = new Panel();
             this.panelSaveInfo.BackColor = Color.White;
             this.panelSaveInfo.BorderStyle = BorderStyle.FixedSingle;
-            this.panelSaveInfo.Size = new Size(560, 120);
+            this.panelSaveInfo.Size = new Size(560, 150);
             this.panelSaveInfo.Location = new Point(20, 90);
 
             // Create the current save label
@@ -92,14 +94,23 @@ namespace FactorioSave
             this.lblCurrentSave.Location = new Point(10, 10);
             this.panelSaveInfo.Controls.Add(this.lblCurrentSave);
 
-            // Create the last modified label
+            // Create the last modified label (local)
             this.lblLastModified = new Label();
-            this.lblLastModified.Text = "Last Modified: --";
+            this.lblLastModified.Text = "Last Modified (Local): --";
             this.lblLastModified.Font = new Font("Segoe UI", 10F);
             this.lblLastModified.ForeColor = Color.FromArgb(80, 80, 80);
             this.lblLastModified.AutoSize = true;
             this.lblLastModified.Location = new Point(10, 40);
             this.panelSaveInfo.Controls.Add(this.lblLastModified);
+
+            // Create the last modified on Drive label
+            this.lblDriveLastModified = new Label();
+            this.lblDriveLastModified.Text = "Last Modified (Drive): --";
+            this.lblDriveLastModified.Font = new Font("Segoe UI", 10F);
+            this.lblDriveLastModified.ForeColor = Color.FromArgb(0, 120, 215);
+            this.lblDriveLastModified.AutoSize = true;
+            this.lblDriveLastModified.Location = new Point(10, 70);
+            this.panelSaveInfo.Controls.Add(this.lblDriveLastModified);
 
             // Create the save path label
             this.lblSavePath = new Label();
@@ -108,30 +119,46 @@ namespace FactorioSave
             this.lblSavePath.ForeColor = Color.FromArgb(100, 100, 100);
             this.lblSavePath.AutoSize = true;
             this.lblSavePath.MaximumSize = new Size(540, 50);
-            this.lblSavePath.Location = new Point(10, 70);
+            this.lblSavePath.Location = new Point(10, 100);
             this.panelSaveInfo.Controls.Add(this.lblSavePath);
 
             // Create the Select Save button
             this.btnSelectSaveFile = new Button();
             this.btnSelectSaveFile.Text = "Select Save File";
             this.btnSelectSaveFile.Size = new Size(180, 45);
-            this.btnSelectSaveFile.Location = new Point(20, 230);
+            this.btnSelectSaveFile.Location = new Point(20, 250);
             this.btnSelectSaveFile.FlatStyle = FlatStyle.Flat;
             this.btnSelectSaveFile.BackColor = Color.FromArgb(66, 139, 202);
             this.btnSelectSaveFile.ForeColor = Color.White;
-            this.btnSelectSaveFile.Font = new Font("Segoe UI", 10F);
+            this.btnSelectSaveFile.Font = new Font("Segoe UI", 12F);
+            this.btnSelectSaveFile.Font = new Font(this.btnSelectSaveFile.Font, FontStyle.Bold);
             this.btnSelectSaveFile.Cursor = Cursors.Hand;
             this.btnSelectSaveFile.Click += new EventHandler(this.btnSelectSaveFile_Click);
+
+            // Create the Upload to Drive button
+            this.btnUploadToDrive = new Button();
+            this.btnUploadToDrive.Text = "Upload to Drive";
+            this.btnUploadToDrive.Size = new Size(180, 45);
+            this.btnUploadToDrive.Location = new Point(210, 250);
+            this.btnUploadToDrive.FlatStyle = FlatStyle.Flat;
+            this.btnUploadToDrive.BackColor = Color.FromArgb(217, 83, 79);
+            this.btnUploadToDrive.ForeColor = Color.White;
+            this.btnUploadToDrive.Font = new Font("Segoe UI", 12F);
+            this.btnUploadToDrive.Font = new Font(this.btnUploadToDrive.Font, FontStyle.Bold);
+
+            this.btnUploadToDrive.Cursor = Cursors.Hand;
+            this.btnUploadToDrive.Click += new EventHandler(this.btnUploadToDrive_Click);
 
             // Create the Download from Drive button
             this.btnDownloadFromDrive = new Button();
             this.btnDownloadFromDrive.Text = "Download from Drive";
             this.btnDownloadFromDrive.Size = new Size(180, 45);
-            this.btnDownloadFromDrive.Location = new Point(220, 230);
+            this.btnDownloadFromDrive.Location = new Point(400, 250);
             this.btnDownloadFromDrive.FlatStyle = FlatStyle.Flat;
             this.btnDownloadFromDrive.BackColor = Color.FromArgb(92, 184, 92);
             this.btnDownloadFromDrive.ForeColor = Color.White;
             this.btnDownloadFromDrive.Font = new Font("Segoe UI", 10F);
+            this.btnDownloadFromDrive.Font = new Font(this.btnDownloadFromDrive.Font, FontStyle.Bold);
             this.btnDownloadFromDrive.Cursor = Cursors.Hand;
             this.btnDownloadFromDrive.Click += new EventHandler(this.btnDownloadFromDrive_Click);
 
@@ -141,12 +168,12 @@ namespace FactorioSave
             this.lblStatus.Font = new Font("Segoe UI", 9F);
             this.lblStatus.AutoSize = true;
             this.lblStatus.ForeColor = Color.FromArgb(80, 80, 80);
-            this.lblStatus.Location = new Point(20, 350);
+            this.lblStatus.Location = new Point(20, 370);
 
             // Create game status panel
             this.panelGameStatus = new Panel();
             this.panelGameStatus.Size = new Size(275, 40);
-            this.panelGameStatus.Location = new Point(20, 290);
+            this.panelGameStatus.Location = new Point(20, 320);
             this.panelGameStatus.BorderStyle = BorderStyle.FixedSingle;
 
             // Create game status label
@@ -161,7 +188,7 @@ namespace FactorioSave
             // Create last action panel
             this.panelLastAction = new Panel();
             this.panelLastAction.Size = new Size(275, 40);
-            this.panelLastAction.Location = new Point(305, 290);
+            this.panelLastAction.Location = new Point(305, 320);
             this.panelLastAction.BorderStyle = BorderStyle.FixedSingle;
             this.panelLastAction.BackColor = Color.White;
 
@@ -176,20 +203,20 @@ namespace FactorioSave
 
             // Create timer for checking game state
             this.timerGameState = new System.Windows.Forms.Timer(this.components);
-            this.timerGameState.Interval = 500; // Check every 2 seconds
+            this.timerGameState.Interval = 500; // Check every half second
             this.timerGameState.Tick += new EventHandler(this.OnTimerGameStateTick);
 
             // Add all controls to the form
             this.Controls.Add(this.panelHeader);
             this.Controls.Add(this.panelSaveInfo);
             this.Controls.Add(this.btnSelectSaveFile);
+            this.Controls.Add(this.btnUploadToDrive);
             this.Controls.Add(this.btnDownloadFromDrive);
             this.Controls.Add(this.panelGameStatus);
             this.Controls.Add(this.panelLastAction);
             this.Controls.Add(this.lblStatus);
         }
 
-        #endregion
     }
 
 
