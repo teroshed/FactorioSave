@@ -631,6 +631,139 @@ namespace FactorioSave
         }
 
         /// <summary>
+        /// Checks if a folder on Google Drive is publicly accessible
+        /// </summary>
+        /// <param name="folderId">The ID of the folder to check</param>
+        /// <returns>LinkStatus object with access information</returns>
+        public async Task<LinkStatus> CheckFolderAccessAsync(string folderId)
+        {
+            try
+            {
+                // Ensure the service is initialized
+                if (_driveService == null)
+                {
+                    if (!await InitializeAsync())
+                        return new LinkStatus { Status = LinkAccessStatus.Invalid, Message = "Drive service not initialized" };
+                }
+
+                // Try to get information about the folder
+                var request = _driveService.Files.Get(folderId);
+                request.Fields = "id, name, mimeType, shared, permissions, sharingUser, capabilities";
+
+                var file = await request.ExecuteAsync();
+
+                // Check if it's a folder
+                if (file.MimeType != "application/vnd.google-apps.folder")
+                {
+                    return new LinkStatus
+                    {
+                        Status = LinkAccessStatus.Invalid,
+                        Message = "Not a folder"
+                    };
+                }
+
+                // Check if it's shared
+                if (!file.Shared.HasValue || !file.Shared.Value)
+                {
+                    return new LinkStatus
+                    {
+                        Status = LinkAccessStatus.Private,
+                        Message = "Folder is private",
+                        FolderName = file.Name
+                    };
+                }
+
+                // Check permissions to see if it has public access
+                var permRequest = _driveService.Permissions.List(folderId);
+                var permissions = await permRequest.ExecuteAsync();
+
+                bool isPublic = false;
+                bool hasWriteAccess = false;
+
+                foreach (var permission in permissions.Permissions)
+                {
+                    if (permission.Type == "anyone")
+                    {
+                        isPublic = true;
+                        if (permission.Role == "writer")
+                        {
+                            hasWriteAccess = true;
+                        }
+                    }
+                }
+
+                if (isPublic)
+                {
+                    return new LinkStatus
+                    {
+                        Status = hasWriteAccess ? LinkAccessStatus.PublicWritable : LinkAccessStatus.PublicReadOnly,
+                        Message = hasWriteAccess ? "Folder is public with write access" : "Folder is public with read-only access",
+                        FolderName = file.Name
+                    };
+                }
+                else
+                {
+                    return new LinkStatus
+                    {
+                        Status = LinkAccessStatus.SharedLimited,
+                        Message = "Folder is shared with specific people only",
+                        FolderName = file.Name
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error checking folder access: {ex.Message}");
+                return new LinkStatus
+                {
+                    Status = LinkAccessStatus.Invalid,
+                    Message = $"Error: {ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
+        /// Extracts a folder ID from various Google Drive link formats
+        /// </summary>
+        /// <param name="link">The link or ID to parse</param>
+        /// <returns>The extracted folder ID or null if invalid</returns>
+        public string ExtractFolderIdFromLink(string link)
+        {
+            if (string.IsNullOrWhiteSpace(link))
+                return null;
+
+            // Trim any whitespace
+            link = link.Trim();
+
+            // Case 1: Already just the ID (alphanumeric string, typically 33 chars)
+            if (link.Length >= 25 && link.Length <= 45 && !link.Contains("/") && !link.Contains("?"))
+                return link;
+
+            // Case 2: Full Drive URL with folders/ID format
+            if (link.Contains("folders/"))
+            {
+                int startIndex = link.IndexOf("folders/") + 8;
+                int endIndex = link.IndexOf('?', startIndex);
+                if (endIndex == -1) endIndex = link.Length;
+
+                return link.Substring(startIndex, endIndex - startIndex);
+            }
+
+            // Case 3: Shortened URL with ID parameter
+            if (link.Contains("id="))
+            {
+                int startIndex = link.IndexOf("id=") + 3;
+                int endIndex = link.IndexOf('&', startIndex);
+                if (endIndex == -1) endIndex = link.Length;
+
+                return link.Substring(startIndex, endIndex - startIndex);
+            }
+
+            // Invalid format
+            return null;
+        }
+
+        /// <summary>
         /// Gets the list of save files available in Google Drive
         /// </summary>
         public async Task<List<SaveFileInfo>> GetSaveFilesListAsync()
@@ -684,6 +817,46 @@ namespace FactorioSave
             }
         }
     }
+
+    /// <summary>
+    /// Enum representing the access status of a Google Drive folder
+    /// </summary>
+    public enum LinkAccessStatus
+    {
+        Invalid,
+        Private,
+        SharedLimited,
+        PublicReadOnly,
+        PublicWritable
+    }
+
+    /// <summary>
+    /// Class representing the access status of a Google Drive folder
+    /// </summary>
+    public class LinkStatus
+    {
+        public LinkAccessStatus Status { get; set; }
+        public string Message { get; set; }
+        public string FolderName { get; set; }
+
+        public System.Drawing.Color GetStatusColor()
+        {
+            switch (Status)
+            {
+                case LinkAccessStatus.PublicWritable:
+                    return System.Drawing.Color.FromArgb(92, 184, 92); // Green
+                case LinkAccessStatus.PublicReadOnly:
+                    return System.Drawing.Color.FromArgb(240, 173, 78); // Yellow
+                case LinkAccessStatus.SharedLimited:
+                    return System.Drawing.Color.FromArgb(91, 192, 222); // Blue
+                case LinkAccessStatus.Private:
+                    return System.Drawing.Color.FromArgb(217, 83, 79); // Red
+                default:
+                    return System.Drawing.Color.FromArgb(217, 83, 79); // Red for Invalid
+            }
+        }
+    }
+
 
     /// <summary>
     /// Class to hold information about a save file
