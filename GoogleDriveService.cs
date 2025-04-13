@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Drive.v3;
 using Google.Apis.Drive.v3.Data;
-
+using Google.Apis.Upload;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
 using Newtonsoft.Json;
@@ -19,6 +19,8 @@ namespace FactorioSave
         // The Drive API service
         private DriveService _driveService;
         private UserCredential _credential;
+        private CancellationTokenSource _cancellationTokenSource;
+
 
         // The name of the folder in Google Drive where saves will be stored
         private const string FACTORIO_FOLDER_NAME = "FactorioSaves";
@@ -34,6 +36,192 @@ namespace FactorioSave
             _factorioFolderId = null;
             _credential = null;   
         }
+
+        public async Task<string> CreatePublicSharingLinkAsync()
+        {
+            try
+            {
+                // Ensure the service is initialized
+                if (_driveService == null)
+                {
+                    if (!await InitializeAsync())
+                        return null;
+                }
+
+                // Make sure the folder exists
+                await EnsureFactorioFolderExistsAsync();
+
+                // Set up the permission for anyone with the link to view
+                var permission = new Google.Apis.Drive.v3.Data.Permission
+                {
+                    Type = "anyone",
+                    Role = "writer",
+                    AllowFileDiscovery = true
+                };
+
+                // Apply the permission to the folder
+                var request = _driveService.Permissions.Create(permission, _factorioFolderId);
+                await request.ExecuteAsync();
+
+                // Get the web view link for the folder
+                var getRequest = _driveService.Files.Get(_factorioFolderId);
+                getRequest.Fields = "webViewLink";
+                var file = await getRequest.ExecuteAsync();
+
+
+                return file.WebViewLink;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error creating sharing link: {ex.Message}");
+                return null;
+            }
+        }
+
+
+        /// Validates if a folder ID is valid
+        /// </summary>
+        public async Task<bool> ValidateFolderIdAsync(string folderId)
+        {
+            try
+            {
+                // Ensure the service is initialized
+                if (_driveService == null)
+                {
+                    if (!await InitializeAsync())
+                        return false;
+                }
+
+                // Try to get information about the folder
+                var request = _driveService.Files.Get(folderId);
+                request.Fields = "id, name, mimeType";
+
+                var file = await request.ExecuteAsync();
+
+                // Check if it's a folder
+                return file.MimeType == "application/vnd.google-apps.folder";
+            }
+            catch
+            {
+                // If any exception occurs, the folder ID is invalid
+                return false;
+            }
+        }
+
+       
+
+
+
+
+
+        /// Gets the current folder ID
+        /// </summary>
+        public string GetFolderId()
+        {
+            return _factorioFolderId;
+        }
+
+        /// Sets a custom folder ID for the Factorio saves folder
+        /// </summary>
+        public void SetCustomFolderLink(string folderId)
+        {
+            if (!string.IsNullOrEmpty(folderId))
+            {
+                // Extract just the folder ID if a full URL was provided
+                if (folderId.Contains("folders/"))
+                {
+                    int startIndex = folderId.IndexOf("folders/") + 8;
+                    int endIndex = folderId.IndexOf('?', startIndex);
+                    if (endIndex == -1) endIndex = folderId.Length;
+            
+                    folderId = folderId.Substring(startIndex, endIndex - startIndex);
+                }
+        
+                _factorioFolderId = folderId;
+            }
+        }
+
+        /// <summary>
+        /// Gets information about a specific save file from Google Drive
+        /// </summary>
+        public async Task<SaveFileInfo> GetSaveFileInfoAsync(string fileName)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"Getting save file info, filename:{fileName}");
+                // Ensure the service is initialized
+                if (_driveService == null)
+                {
+                    if (!await InitializeAsync())
+                        return null;
+                }
+
+                // Find the file ID
+                string fileId = await FindFileIdByNameAsync(fileName);
+
+                // If file doesn't exist in Drive
+                if (string.IsNullOrEmpty(fileId))
+                {
+                    return null;
+                }
+
+                // Get the file metadata
+                var request = _driveService.Files.Get(fileId);
+                request.Fields = "id, name, modifiedTime, size";
+
+                var file = await request.ExecuteAsync();
+
+                
+                
+                return new SaveFileInfo
+                {
+                    Name = file.Name,
+                    Id = file.Id,
+                    ModifiedTimeOffset = file.ModifiedTimeDateTimeOffset,
+                    Size = file.Size ?? 0
+                };
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting file info from Drive: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// Gets the web view link for the Factorio folder
+        /// </summary>
+        public async Task<string> GetFolderLinkAsync()
+        {
+            try
+            {
+                // Ensure the service is initialized
+                if (_driveService == null)
+                {
+                    if (!await InitializeAsync())
+                        return null;
+                }
+
+                // Make sure the folder exists
+                await EnsureFactorioFolderExistsAsync();
+
+                // Get the web view link
+                var request = _driveService.Files.Get(_factorioFolderId);
+                request.Fields = "webViewLink";
+                var file = await request.ExecuteAsync();
+
+                return file.WebViewLink;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting folder link: {ex.Message}");
+                return null;
+            }
+        }
+
+
+
+       
+      
 
         /// <summary>
         /// Initializes the Google Drive service
@@ -91,20 +279,7 @@ namespace FactorioSave
                 
 
 
-                
-
-                
-                
-
-                
-
-                
-
-                
-
-                
-
-                
+     
 
                 return true;
             }
@@ -247,8 +422,15 @@ namespace FactorioSave
             }
         }
 
+        static void Upload_ProgressChanged(IUploadProgress progress) =>
+                    System.Diagnostics.Debug.WriteLine(progress.Status + " " + progress.BytesSent);                
+
+
+                static void Upload_ResponseReceived(Google.Apis.Drive.v3.Data.File file) =>
+                    System.Diagnostics.Debug.WriteLine(file.Name + " was uploaded successfully");
+
         /// <summary>
-        /// Uploads a save file to Google Drive
+        /// Uploads a save file to Google Drive, replacing any existing file with the same name
         /// </summary>
         public async Task<bool> UploadSaveAsync(string saveFilePath)
         {
@@ -269,34 +451,60 @@ namespace FactorioSave
                 // Get just the file name
                 string fileName = Path.GetFileName(saveFilePath);
 
+                string existingFileId;
+
+                int counter = 0;
                 // Check if a file with this name already exists
-                string existingFileId = await FindFileIdByNameAsync(fileName);
+                
+                existingFileId = await FindFileIdByNameAsync(fileName);
+                using var uploadStream = System.IO.File.OpenRead(saveFilePath);
 
-                // Create file metadata
-                var fileMetadata = new Google.Apis.Drive.v3.Data.File()
+                // If a file with the same name exists, delete it first
+                if (!string.IsNullOrEmpty(existingFileId))
                 {
-                    Name = fileName,
-                    Parents = new List<string> { _factorioFolderId }
-                };
+                    // File exists, update it
+                    System.Diagnostics.Debug.WriteLine($"Updating existing file with ID: {existingFileId}");
+            
+                    // For update, we don't need to specify the Parents since the file already has a location
+                    Google.Apis.Drive.v3.Data.File fileMetadata = new Google.Apis.Drive.v3.Data.File
+                    {
+                        Name = fileName
+                    };
 
-                // Create the file content
-                using (var stream = new System.IO.FileStream(saveFilePath, System.IO.FileMode.Open))
-                {
-                    // If the file exists, update it, otherwise create a new one
-                    if (!string.IsNullOrEmpty(existingFileId))
-                    {
-                        // Update existing file
-                        var updateRequest = _driveService.Files.Update(fileMetadata, existingFileId, stream, "application/zip");
-                        await updateRequest.UploadAsync();
-                    }
-                    else
-                    {
-                        // Create new file
-                        var createRequest = _driveService.Files.Create(fileMetadata, stream, "application/zip");
-                        createRequest.Fields = "id";
-                        await createRequest.UploadAsync();
-                    }
+                    // Create the update request
+                    FilesResource.UpdateMediaUpload updateRequest = _driveService.Files.Update(
+                        fileMetadata, existingFileId, uploadStream, "application/zip");
+
+                    // Add progress handlers
+                    updateRequest.ProgressChanged += Upload_ProgressChanged;
+                    updateRequest.ResponseReceived += (file) => 
+                        System.Diagnostics.Debug.WriteLine(file.Name + " was updated successfully");
+
+                    // Execute the update
+                    await updateRequest.UploadAsync();
                 }
+                else
+                {
+                    // File doesn't exist, create it
+                    Google.Apis.Drive.v3.Data.File fileMetaData = new Google.Apis.Drive.v3.Data.File
+                    {
+                        Name = fileName,
+                        Parents = new List<string> { _factorioFolderId }
+                    };
+
+                    // Create the upload request
+                    FilesResource.CreateMediaUpload insertRequest = _driveService.Files.Create(
+                        fileMetaData, uploadStream, "application/zip");
+
+                    // Add handlers
+                    insertRequest.ProgressChanged += Upload_ProgressChanged;
+                    insertRequest.ResponseReceived += Upload_ResponseReceived;
+
+                    // Execute the upload
+                    await insertRequest.UploadAsync();
+                }   
+               
+              
 
                 return true;
             }
@@ -305,7 +513,7 @@ namespace FactorioSave
                 Console.WriteLine($"Error uploading save: {ex.Message}");
                 return false;
             }
-        }
+}
 
         /// <summary>
         /// Downloads a save file from Google Drive
@@ -387,7 +595,7 @@ namespace FactorioSave
                         {
                             Name = file.Name,
                             Id = file.Id,
-                            ModifiedTime = file.ModifiedTime,
+                            ModifiedTimeOffset = file.ModifiedTimeDateTimeOffset,
                             Size = file.Size ?? 0
                         });
                     }
@@ -410,7 +618,11 @@ namespace FactorioSave
     {
         public string Name { get; set; }
         public string Id { get; set; }
-        public DateTime? ModifiedTime { get; set; }
+        public DateTimeOffset? ModifiedTimeOffset { get; set; }
         public long Size { get; set; }
     }
+    /// <summary>
+    /// Class to hold information about a save file
+    /// </summary>
+    
 }
