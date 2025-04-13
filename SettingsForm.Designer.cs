@@ -19,7 +19,7 @@
         /// <summary>
         /// Required designer variable.
         /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        private System.ComponentModel.IContainer settingsComponents = null;
 
         /// <summary>
         /// Clean up any resources being used.
@@ -27,9 +27,9 @@
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing && (components != null))
+            if (disposing && (settingsComponents != null))
             {
-                components.Dispose();
+                settingsComponents.Dispose();
             }
             base.Dispose(disposing);
         }
@@ -38,7 +38,7 @@
 
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
+            this.settingsComponents = new System.ComponentModel.Container();
             this.lblTitle = new System.Windows.Forms.Label();
             this.lblOpenAction = new System.Windows.Forms.Label();
             this.lblCloseAction = new System.Windows.Forms.Label();

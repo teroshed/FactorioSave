@@ -1,8 +1,11 @@
 ﻿using FactorioSave.Properties;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -30,6 +33,13 @@ namespace FactorioSave
         private System.Windows.Forms.Timer _timer30Seconds;
 
         private string _sharingLink = string.Empty;
+        private bool _hasDriveLocation = false;
+
+
+        private System.Windows.Forms.Timer _pulseTimer;
+        private Dictionary<Button, Color> _originalButtonColors = new Dictionary<Button, Color>();
+        private bool _pulseIncreasing = true;
+        private int _pulseValue = 0;
 
 
 
@@ -41,6 +51,9 @@ namespace FactorioSave
 
         // This method is automatically generated and sets up the UI components
             InitializeComponent();
+
+            //ApplyRoundedCorners();
+
 
             _googleDriveService = new GoogleDriveService();
             _googleDriveService.InitializeAsync();
@@ -57,9 +70,17 @@ namespace FactorioSave
 
             _appSettings = ApplicationSettings.LoadSettings();
 
-            linkFolderUrl.Text = _appSettings.LastSharedFolderLink;
+
             _sharingLink = _appSettings.LastSharedFolderLink;
-            
+            txtFolderUrl.Text = string.IsNullOrEmpty(_sharingLink) ?
+                "No sharing link available" : _sharingLink;
+            btnOpenLink.Enabled = !string.IsNullOrEmpty(_sharingLink);
+
+            if (!string.IsNullOrEmpty(_appSettings.DriveTargetLocation))
+            {
+                lblDriveLocation.Text = $"Drive location: {_appSettings.DriveTargetLocation}";
+
+            }
 
             if (!string.IsNullOrEmpty(_appSettings.LastSharedFolderLink))
             {
@@ -67,18 +88,13 @@ namespace FactorioSave
             }
 
 
-            _timer05Seconds = new System.Windows.Forms.Timer(this.components);
-            _timer05Seconds.Interval = 500;
-            _timer05Seconds.Tick += new EventHandler(On05SecondsTimer);
-            _timer05Seconds.Start();
+            if (!string.IsNullOrEmpty(_appSettings.LastSharedFolderLink))
+            {
+                _googleDriveService.SetCustomFolderLink(_appSettings.LastSharedFolderLink);
+            }
 
 
-
-            // Initialize the timer to update the "Last Action" time display
-            _timer30Seconds = new System.Windows.Forms.Timer(this.components);
-            _timer30Seconds.Interval = 30000; // Update every 30 seconds
-            _timer30Seconds.Tick += new EventHandler(On30SecondTimer);
-            _timer30Seconds.Start();
+            
 
 
 
@@ -93,8 +109,147 @@ namespace FactorioSave
 
             // Initialize last action display
             UpdateTimeLabels();
-           
 
+            initializeTimers();
+
+
+
+            UpdateButtonStates();
+
+
+
+
+
+
+        }
+
+        private void initializeTimers()
+        {
+            if (this.components == null)
+            {
+                this.components = new System.ComponentModel.Container();
+            }
+            _pulseTimer = new System.Windows.Forms.Timer(this.components);
+            _pulseTimer.Interval = 50; // 50ms for smooth animation
+            _pulseTimer.Tick += OnPulseTimerTick;
+
+            _timer05Seconds = new System.Windows.Forms.Timer(this.components);
+            _timer05Seconds.Interval = 500;
+            _timer05Seconds.Tick += new EventHandler(On05SecondsTimer);
+            _timer05Seconds.Start();
+
+
+
+            // Initialize the timer to update the "Last Action" time display
+            _timer30Seconds = new System.Windows.Forms.Timer(this.components);
+            _timer30Seconds.Interval = 30000; // Update every 30 seconds
+            _timer30Seconds.Tick += new EventHandler(On30SecondTimer);
+            _timer30Seconds.Start();
+
+            
+        }
+
+        // Apply rounded corners to all controls
+        private void ApplyRoundedCorners()
+        {
+            // Apply to all panels
+            ApplyRoundCorners(panelHeader, 10);
+            ApplyRoundCorners(panelSaveInfo, 15);
+            ApplyRoundCorners(panelSharing, 15);
+            ApplyRoundCorners(panelGameStatus, 15);
+            ApplyRoundCorners(panelLastAction, 15);
+
+            // Apply to all buttons
+            ApplyRoundCorners(btnSelectSaveFile, 20);
+            ApplyRoundCorners(btnSearchSave, 20);
+            ApplyRoundCorners(btnUploadToDrive, 20);
+            ApplyRoundCorners(btnDownloadFromDrive, 20);
+            ApplyRoundCorners(btnSettings, 10);
+            ApplyRoundCorners(btnCopyLink, 15);
+            ApplyRoundCorners(btnEditLink, 15);
+            ApplyRoundCorners(btnGenerateLink, 15);
+        }
+
+        // Helper method to apply rounded corners to a control
+        private void ApplyRoundCorners(Control control, int radius)
+        {
+            using (GraphicsPath path = new GraphicsPath())
+            {
+                path.AddArc(0, 0, radius, radius, 180, 90);
+                path.AddArc(control.Width - radius, 0, radius, radius, 270, 90);
+                path.AddArc(control.Width - radius, control.Height - radius, radius, radius, 0, 90);
+                path.AddArc(0, control.Height - radius, radius, radius, 90, 90);
+                path.CloseAllFigures();
+
+                control.Region = new Region(path);
+            }
+
+            // Make sure the form repaints properly
+            control.Paint += (sender, e) =>
+            {
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            };
+        }
+
+
+        private void OnPulseTimerTick(object sender, EventArgs e)
+        {
+            // Pulse all buttons in the dictionary
+            foreach (var btn in _originalButtonColors.Keys.ToList())
+            {
+                // Calculate pulse amount (0-40)
+                if (_pulseIncreasing)
+                {
+                    _pulseValue += 2;
+                    if (_pulseValue >= 40) _pulseIncreasing = false;
+                }
+                else
+                {
+                    _pulseValue -= 2;
+                    if (_pulseValue <= 0) _pulseIncreasing = true;
+                }
+
+                // Get base color
+                var baseColor = _originalButtonColors[btn];
+
+                // Apply pulse
+                int r = Math.Min(255, baseColor.R + _pulseValue);
+                int g = Math.Min(255, baseColor.G + _pulseValue);
+                int b = Math.Min(255, baseColor.B + _pulseValue);
+
+                btn.BackColor = Color.FromArgb(r, g, b);
+            }
+        }
+
+        private void StartButtonPulse(Button button)
+        {
+            // Save original color if not already saved
+            if (!_originalButtonColors.ContainsKey(button))
+            {
+                _originalButtonColors[button] = button.BackColor;
+            }
+
+            // Make sure timer is running
+            if (!_pulseTimer.Enabled)
+            {
+                _pulseTimer.Start();
+            }
+        }
+
+        private void StopButtonPulse(Button button)
+        {
+            // If button is being pulsed, remove it and restore original color
+            if (_originalButtonColors.ContainsKey(button))
+            {
+                button.BackColor = _originalButtonColors[button];
+                _originalButtonColors.Remove(button);
+            }
+
+            // If no more buttons to pulse, stop the timer
+            if (_originalButtonColors.Count == 0 && _pulseTimer.Enabled)
+            {
+                _pulseTimer.Stop();
+            }
         }
 
 
@@ -112,6 +267,55 @@ namespace FactorioSave
             UpdateDriveTimeDisplay();
 
 
+        }
+
+        // Method to check if a Drive location exists and update button states
+        private void UpdateButtonStates()
+        {
+            // Check if we have a valid drive location and link
+            _hasDriveLocation = !string.IsNullOrEmpty(_appSettings.DriveTargetLocation) ||
+                                !string.IsNullOrEmpty(_googleDriveService.GetFolderId());
+
+            bool hasLink = !string.IsNullOrEmpty(_sharingLink);
+
+            // Disable download button if we don't have a Drive location
+            btnDownloadFromDrive.Enabled = _hasDriveLocation;
+
+            // If no Drive location or link, highlight the search and edit buttons
+            if (!_hasDriveLocation || !hasLink)
+            {
+                // Make Search button green and animated if no Drive location
+                if (!_hasDriveLocation)
+                {
+                    btnSearchSave.BackColor = Color.FromArgb(92, 184, 92); // Green
+                    StartButtonPulse(btnSearchSave);
+                }
+                else
+                {
+                    btnSearchSave.BackColor = Color.FromArgb(240, 173, 78); // Yellow/amber
+                    StopButtonPulse(btnSearchSave);
+                }
+
+                // Make Edit Link button green and animated if no link
+                if (!hasLink)
+                {
+                    btnEditLink.BackColor = Color.FromArgb(92, 184, 92); // Green
+                    StartButtonPulse(btnEditLink);
+                }
+                else
+                {
+                    btnEditLink.BackColor = Color.FromArgb(224, 224, 224); // Original color
+                    StopButtonPulse(btnEditLink);
+                }
+            }
+            else
+            {
+                // If we have both, restore original colors and stop animation
+                btnSearchSave.BackColor = Color.FromArgb(240, 173, 78);
+                btnEditLink.BackColor = Color.FromArgb(224, 224, 224);
+                StopButtonPulse(btnSearchSave);
+                StopButtonPulse(btnEditLink);
+            }
         }
 
         // Handle clicking on the sharing link
@@ -238,7 +442,7 @@ namespace FactorioSave
             }
         }
 
-        // Handle generate link button click
+        // Update btnGenerateLink_Click method:
         private async void btnGenerateLink_Click(object sender, EventArgs e)
         {
             try
@@ -252,7 +456,8 @@ namespace FactorioSave
                 {
                     // Save and display the link
                     _sharingLink = link;
-                    linkFolderUrl.Text = link;
+                    txtFolderUrl.Text = link;
+                    btnOpenLink.Enabled = true; // Enable the Open button
                     _appSettings.LastSharedFolderLink = link;
                     _appSettings.SaveSettings();
                     lblStatus.Text = "Status: Public sharing link generated successfully";
@@ -279,6 +484,7 @@ namespace FactorioSave
         }
 
         // Set a custom folder link
+        // Update SetCustomFolderLink method:
         private async void SetCustomFolderLink(string link)
         {
             try
@@ -299,7 +505,8 @@ namespace FactorioSave
                     if (!string.IsNullOrEmpty(webLink))
                     {
                         _sharingLink = webLink;
-                        linkFolderUrl.Text = webLink;
+                        txtFolderUrl.Text = webLink;
+                        btnOpenLink.Enabled = true; // Enable the Open button
                         lblStatus.Text = "Status: Custom folder link set successfully";
                     }
                     else
@@ -328,8 +535,8 @@ namespace FactorioSave
             }
         }
 
-        // Add this to your constructor to initialize sharing
-        private async void InitializeSharingAsync()
+            // Add this to your constructor to initialize sharing
+            private async void InitializeSharingAsync()
         {
             try
             {
@@ -339,7 +546,6 @@ namespace FactorioSave
                 if (!string.IsNullOrEmpty(link))
                 {
                     _sharingLink = link;
-                    linkFolderUrl.Text = link;
                 }
             }
             catch (Exception ex)
@@ -559,7 +765,7 @@ namespace FactorioSave
        
 
         // Uploads the current save to Google Drive
-        private async void UploadSaveToGoogleDrive()
+        private async Task UploadSaveToGoogleDrive()
         {
             try
             {
@@ -773,6 +979,307 @@ namespace FactorioSave
             return timeText;
         }
 
+
+        // Handles the Open button click to open the link in a browser
+        /// </summary>
+        private void btnOpenLink_Click(object sender, EventArgs e)
+        {
+            if (!string.IsNullOrEmpty(_sharingLink))
+            {
+                try
+                {
+                    // Open the link in the default browser
+                    System.Diagnostics.Process.Start(new ProcessStartInfo
+                    {
+                        FileName = _sharingLink,
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        $"Error opening link: {ex.Message}\n\nYou can manually copy the link and open it in your browser.",
+                        "Error Opening Link",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
+            }
+        }
+
+
+
+        /// <summary>
+        /// Handles the text box click event to enable editing
+        /// </summary>
+        private void txtFolderUrl_Click(object sender, EventArgs e)
+        {
+            // Only enable editing if there is a valid link
+            if (!string.IsNullOrEmpty(_sharingLink) && _sharingLink != "No sharing link available")
+            {
+                txtFolderUrl.ReadOnly = false;
+                txtFolderUrl.SelectAll();
+            }
+        }
+
+        /// <summary>
+        /// Searches for the current save file on Google Drive and offers organization options
+        /// </summary>
+        private async void btnSearchSave_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Check if a save file is selected
+                if (string.IsNullOrEmpty(_factorioMonitor.SaveFileName) || _factorioMonitor.SaveFileName == "None")
+                {
+                    MessageBox.Show(
+                        "Please select a save file first.",
+                        "No Save Selected",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                lblStatus.Text = "Status: Searching for save on Google Drive...";
+
+                // Search for the file in Drive
+                var saveFiles = await _googleDriveService.GetSaveFilesListAsync();
+                var existingSave = saveFiles.FirstOrDefault(f => f.Name == _factorioMonitor.SaveFileName);
+
+                if (existingSave != null)
+                {
+                    // Save found on Drive - get detailed location info
+                    var locationInfo = await _googleDriveService.GetFileLocationAsync(existingSave.Id);
+
+                    // Format the modified time if available
+                    string modifiedText = locationInfo.ModifiedTime.HasValue
+                        ? locationInfo.ModifiedTime.Value.ToString("dd.MM.yyyy - HH:mm:ss")
+                        : "Unknown";
+
+                    // Show the file location in the UI with owner and last modified time
+                    lblDriveLocation.Text = $"Drive Location: {locationInfo.Path}";
+
+                    // Create a message with all the details
+                    string message =
+                        $"Save file '{_factorioMonitor.SaveFileName}' found on Google Drive.\n\n" +
+                        $"Location: {locationInfo.Path}\n" +
+                        $"Owner: {locationInfo.Owner}\n" +
+                        $"Last Modified: {modifiedText}";
+
+                    MessageBox.Show(
+                        message,
+                        "Save Found",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+
+                    // The file already exists, so we set the current location as the target
+                    _appSettings.DriveTargetLocation = locationInfo.Path;
+                    _appSettings.SaveSettings();
+
+                    // Update button states
+                    UpdateButtonStates();
+                }
+                else
+                {
+                    // Save not found - show organization options dialog
+                    ShowSaveOrganizationDialog();
+                }
+
+                lblStatus.Text = "Status: Ready";
+            }
+            catch (Exception ex)
+            {
+                lblStatus.Text = "Status: Error searching for save";
+                MessageBox.Show(
+                    $"Error searching for save: {ex.Message}",
+                    "Search Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Shows a dialog to let the user choose how to organize saves on Drive
+        /// </summary>
+        private void ShowSaveOrganizationDialog()
+        {
+            using (var organizerForm = new Form())
+            {
+                organizerForm.Text = "Save Organization Options";
+                organizerForm.Width = 450;
+                organizerForm.Height = 250;
+                organizerForm.StartPosition = FormStartPosition.CenterParent;
+                organizerForm.FormBorderStyle = FormBorderStyle.FixedDialog;
+                organizerForm.MaximizeBox = false;
+                organizerForm.MinimizeBox = false;
+
+                // Apply rounded corners to the form
+                using (System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath())
+                {
+                    int radius = 15;
+                    path.AddArc(0, 0, radius, radius, 180, 90);
+                    path.AddArc(organizerForm.Width - radius, 0, radius, radius, 270, 90);
+                    path.AddArc(organizerForm.Width - radius, organizerForm.Height - radius, radius, radius, 0, 90);
+                    path.AddArc(0, organizerForm.Height - radius, radius, radius, 90, 90);
+                    path.CloseAllFigures();
+
+                    organizerForm.Region = new Region(path);
+                }
+
+                // Information label
+                var lblInfo = new Label
+                {
+                    Text = $"Save file '{_factorioMonitor.SaveFileName}' was not found on Google Drive.",
+                    AutoSize = true,
+                    Location = new Point(20, 20)
+                };
+
+                // Create folder checkbox
+                var chkCreateFolder = new CheckBox
+                {
+                    Text = "Create a FactorioSaves folder on Drive",
+                    Checked = true,
+                    AutoSize = true,
+                    Location = new Point(20, 60)
+                };
+
+                // Upload save checkbox
+                var chkUploadSave = new CheckBox
+                {
+                    Text = "Upload save file now",
+                    Checked = false,
+                    AutoSize = true,
+                    Location = new Point(20, 90)
+                };
+
+                // Location preview label
+                var lblPreview = new Label
+                {
+                    Text = $"Target location: /FactorioSaves/{_factorioMonitor.SaveFileName}",
+                    AutoSize = true,
+                    Location = new Point(20, 130)
+                };
+
+                // Update preview when checkbox changes
+                chkCreateFolder.CheckedChanged += (s, e) =>
+                {
+                    lblPreview.Text = chkCreateFolder.Checked
+                        ? $"Target location: /FactorioSaves/{_factorioMonitor.SaveFileName}"
+                        : $"Target location: /{_factorioMonitor.SaveFileName}";
+                };
+
+                // OK button with rounded corners
+                var btnOK = new Button
+                {
+                    Text = "OK",
+                    DialogResult = DialogResult.OK,
+                    Size = new Size(100, 35),
+                    Location = new Point(330, 170),
+                    BackColor = Color.FromArgb(92, 184, 92),
+                    FlatStyle = FlatStyle.Flat,
+                    ForeColor = Color.White
+                };
+
+                // Apply rounded corners to the OK button
+                using (System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath())
+                {
+                    int radius = 10;
+                    path.AddArc(0, 0, radius, radius, 180, 90);
+                    path.AddArc(btnOK.Width - radius, 0, radius, radius, 270, 90);
+                    path.AddArc(btnOK.Width - radius, btnOK.Height - radius, radius, radius, 0, 90);
+                    path.AddArc(0, btnOK.Height - radius, radius, radius, 90, 90);
+                    path.CloseAllFigures();
+
+                    btnOK.Region = new Region(path);
+                }
+
+                // Cancel button with rounded corners
+                var btnCancel = new Button
+                {
+                    Text = "Cancel",
+                    DialogResult = DialogResult.Cancel,
+                    Size = new Size(100, 35),
+                    Location = new Point(220, 170)
+                };
+
+                // Apply rounded corners to the Cancel button
+                using (System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath())
+                {
+                    int radius = 10;
+                    path.AddArc(0, 0, radius, radius, 180, 90);
+                    path.AddArc(btnCancel.Width - radius, 0, radius, radius, 270, 90);
+                    path.AddArc(btnCancel.Width - radius, btnCancel.Height - radius, radius, radius, 0, 90);
+                    path.AddArc(0, btnCancel.Height - radius, radius, radius, 90, 90);
+                    path.CloseAllFigures();
+
+                    btnCancel.Region = new Region(path);
+                }
+
+                // Add controls to form
+                organizerForm.Controls.Add(lblInfo);
+                organizerForm.Controls.Add(chkCreateFolder);
+                organizerForm.Controls.Add(chkUploadSave);
+                organizerForm.Controls.Add(lblPreview);
+                organizerForm.Controls.Add(btnOK);
+                organizerForm.Controls.Add(btnCancel);
+
+                organizerForm.AcceptButton = btnOK;
+                organizerForm.CancelButton = btnCancel;
+
+                // Show dialog and process result
+                if (organizerForm.ShowDialog() == DialogResult.OK)
+                {
+                    // Set the target location based on user choice
+                    string targetLocation = chkCreateFolder.Checked
+                        ? $"/FactorioSaves/{_factorioMonitor.SaveFileName}"
+                        : $"/{_factorioMonitor.SaveFileName}";
+
+                    // Save the target location
+                    _appSettings.DriveTargetLocation = targetLocation;
+                    _appSettings.SaveSettings();
+
+                    // Update the location display
+                    lblDriveLocation.Text = $"Drive Location: {targetLocation}";
+
+                    // Update button states now that we have a location
+                    UpdateButtonStates();
+
+                    // Upload if requested
+                    if (chkUploadSave.Checked)
+                    {
+                        // Use Task.Run to avoid UI freezing during upload
+                        Task.Run(() =>
+                        {
+                            this.Invoke(async () =>
+                            {
+                                try
+                                {
+                                    // Ensure folder exists if needed
+                                    if (chkCreateFolder.Checked)
+                                    {
+                                        await _googleDriveService.EnsureFactorioFolderExistsAsync();
+                                    }
+
+                                    // Upload the save
+                                    await UploadSaveToGoogleDrive();
+                                }
+                                catch (Exception ex)
+                                {
+                                    MessageBox.Show(
+                                        $"Error during upload: {ex.Message}",
+                                        "Upload Error",
+                                        MessageBoxButtons.OK,
+                                        MessageBoxIcon.Error);
+                                }
+                            });
+                        });
+                    }
+                }
+            }
+        }
+
+
+
+
         private async Task UpdateLastModifiedDriveAsync()
         {
             try
@@ -817,11 +1324,16 @@ namespace FactorioSave
             _lastActionTime = DateTime.Now;
             _lastActionType = actionType;
             UpdateLastActionDisplay();
-        }       
+        }
+
+        private void lblGameStatus_Click(object sender, EventArgs e)
+        {
+
+        }
         // Timer tick event handler to update game status
-        
+
 
         // Updates the game status indicator
-        
+
     }
 }

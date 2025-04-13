@@ -25,7 +25,8 @@ namespace FactorioSave
         private Panel panelGameStatus;
         private Label lblGameStatus;
         private Button btnSettings;
-
+        private Label lblDriveLocation;
+        private Button btnSearchSave;
 
         private Panel panelLastAction;
         private Label lblLastAction;
@@ -34,7 +35,8 @@ namespace FactorioSave
         // Sharing UI components
         private Panel panelSharing;
         private Label lblSharingTitle;
-        private LinkLabel linkFolderUrl;
+        private TextBox txtFolderUrl;
+        private Button btnOpenLink;
         private Button btnCopyLink;
         private Button btnEditLink;
         private Button btnGenerateLink;
@@ -59,252 +61,395 @@ namespace FactorioSave
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
-
-            // Form settings
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
-            this.AutoScaleMode = AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(700, 500);  // Increased size for the sharing panel
-            this.Text = "Factorio Save Sync";
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.BackColor = Color.WhiteSmoke;
-
-
-            // Create header panel
-            this.panelHeader = new Panel();
-            this.panelHeader.BackColor = Color.FromArgb(41, 50, 65);
-            this.panelHeader.Dock = DockStyle.Top;
-            this.panelHeader.Height = 70;
-
-            // Create the title label
-            this.lblTitle = new Label();
-            this.lblTitle.Text = "Factorio Save Sync";
-            this.lblTitle.Font = new Font("Segoe UI", 18F, FontStyle.Bold);
-            this.lblTitle.ForeColor = Color.White;
-            this.lblTitle.AutoSize = true;
-            this.lblTitle.Location = new Point(20, 20);
+            this.panelHeader = new System.Windows.Forms.Panel();
+            this.lblTitle = new System.Windows.Forms.Label();
+            this.btnSettings = new System.Windows.Forms.Button();
+            this.panelSaveInfo = new System.Windows.Forms.Panel();
+            this.lblCurrentSave = new System.Windows.Forms.Label();
+            this.lblLastModified = new System.Windows.Forms.Label();
+            this.lblDriveLastModified = new System.Windows.Forms.Label();
+            this.lblDriveLocation = new System.Windows.Forms.Label();
+            this.lblSavePath = new System.Windows.Forms.Label();
+            this.btnSelectSaveFile = new System.Windows.Forms.Button();
+            this.btnSearchSave = new System.Windows.Forms.Button();
+            this.btnUploadToDrive = new System.Windows.Forms.Button();
+            this.btnDownloadFromDrive = new System.Windows.Forms.Button();
+            this.panelSharing = new System.Windows.Forms.Panel();
+            this.lblSharingTitle = new System.Windows.Forms.Label();
+            this.btnCopyLink = new System.Windows.Forms.Button();
+            this.btnEditLink = new System.Windows.Forms.Button();
+            this.btnGenerateLink = new System.Windows.Forms.Button();
+            this.txtFolderUrl = new System.Windows.Forms.TextBox();
+            this.btnOpenLink = new System.Windows.Forms.Button();
+            this.panelGameStatus = new System.Windows.Forms.Panel();
+            this.lblGameStatus = new System.Windows.Forms.Label();
+            this.panelLastAction = new System.Windows.Forms.Panel();
+            this.lblLastAction = new System.Windows.Forms.Label();
+            this.lblStatus = new System.Windows.Forms.Label();
+            this.panelHeader.SuspendLayout();
+            this.panelSaveInfo.SuspendLayout();
+            this.panelSharing.SuspendLayout();
+            this.panelGameStatus.SuspendLayout();
+            this.panelLastAction.SuspendLayout();
+            this.SuspendLayout();
+            // 
+            // panelHeader
+            // 
+            this.panelHeader.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(41)))), ((int)(((byte)(50)))), ((int)(((byte)(65)))));
             this.panelHeader.Controls.Add(this.lblTitle);
-
-            // Create save info panel
-            this.panelSaveInfo = new Panel();
-            this.panelSaveInfo.BackColor = Color.White;
-            this.panelSaveInfo.BorderStyle = BorderStyle.FixedSingle;
-            this.panelSaveInfo.Size = new Size(660, 150);
-            this.panelSaveInfo.Location = new Point(20, 90);
-
-            // Create the current save label
-            this.lblCurrentSave = new Label();
-            this.lblCurrentSave.Text = "Current Save: None";
-            this.lblCurrentSave.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
-            this.lblCurrentSave.ForeColor = Color.FromArgb(41, 50, 65);
-            this.lblCurrentSave.AutoSize = true;
-            this.lblCurrentSave.Location = new Point(10, 10);
-            this.panelSaveInfo.Controls.Add(this.lblCurrentSave);
-
-            // Create the last modified label (local)
-            this.lblLastModified = new Label();
-            this.lblLastModified.Text = "Last Modified (Local): --";
-            this.lblLastModified.Font = new Font("Segoe UI", 10F);
-            this.lblLastModified.ForeColor = Color.FromArgb(80, 80, 80);
-            this.lblLastModified.AutoSize = true;
-            this.lblLastModified.Location = new Point(10, 40);
-            this.panelSaveInfo.Controls.Add(this.lblLastModified);
-
-            // Create the last modified on Drive label
-            this.lblDriveLastModified = new Label();
-            this.lblDriveLastModified.Text = "Last Modified (Drive): --";
-            this.lblDriveLastModified.Font = new Font("Segoe UI", 10F);
-            this.lblDriveLastModified.ForeColor = Color.FromArgb(0, 120, 215);
-            this.lblDriveLastModified.AutoSize = true;
-            this.lblDriveLastModified.Location = new Point(10, 70);
-            this.panelSaveInfo.Controls.Add(this.lblDriveLastModified);
-
-            // Create the save path label
-            this.lblSavePath = new Label();
-            this.lblSavePath.Text = "Save Path: --";
-            this.lblSavePath.Font = new Font("Segoe UI", 9F);
-            this.lblSavePath.ForeColor = Color.FromArgb(100, 100, 100);
-            this.lblSavePath.AutoSize = true;
-            this.lblSavePath.MaximumSize = new Size(640, 50);
-            this.lblSavePath.Location = new Point(10, 100);
-            this.panelSaveInfo.Controls.Add(this.lblSavePath);
-
-            // Create the sharing panel
-            this.panelSharing = new Panel();
-            this.panelSharing.BackColor = Color.FromArgb(245, 245, 245);
-            this.panelSharing.BorderStyle = BorderStyle.FixedSingle;
-            this.panelSharing.Size = new Size(660, 100);
-            this.panelSharing.Location = new Point(20, 250);
-
-            // Create the sharing title label
-            this.lblSharingTitle = new Label();
-            this.lblSharingTitle.Text = "Share With Friends:";
-            this.lblSharingTitle.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
-            this.lblSharingTitle.ForeColor = Color.FromArgb(41, 50, 65);
-            this.lblSharingTitle.AutoSize = true;
-            this.lblSharingTitle.Location = new Point(10, 10);
-            this.panelSharing.Controls.Add(this.lblSharingTitle);
-
-            // Create the folder link
-            this.linkFolderUrl = new LinkLabel();
-            this.linkFolderUrl.Text = "No sharing link available";
-            this.linkFolderUrl.Font = new Font("Segoe UI", 9.5F);
-            this.linkFolderUrl.AutoSize = true;
-            this.linkFolderUrl.MaximumSize = new Size(520, 40);
-            this.linkFolderUrl.LinkBehavior = LinkBehavior.AlwaysUnderline;
-            this.linkFolderUrl.LinkColor = Color.FromArgb(0, 120, 215);
-            this.linkFolderUrl.Location = new Point(10, 40);
-            this.linkFolderUrl.LinkClicked += new LinkLabelLinkClickedEventHandler(this.linkFolderUrl_LinkClicked);
-            this.panelSharing.Controls.Add(this.linkFolderUrl);
-
-            // Create the copy link button
-            this.btnCopyLink = new Button();
-            this.btnCopyLink.Text = "Copy";
-            this.btnCopyLink.Size = new Size(70, 30);
-            this.btnCopyLink.Location = new Point(10, 65);
-            this.btnCopyLink.FlatStyle = FlatStyle.Flat;
-            this.btnCopyLink.BackColor = Color.FromArgb(224, 224, 224);
-            this.btnCopyLink.ForeColor = Color.Black;
-            this.btnCopyLink.Font = new Font("Segoe UI", 9F);
-            this.btnCopyLink.Cursor = Cursors.Hand;
-            this.btnCopyLink.Click += new EventHandler(this.btnCopyLink_Click);
-            this.panelSharing.Controls.Add(this.btnCopyLink);
-
-            // Create the edit link button
-            this.btnEditLink = new Button();
-            this.btnEditLink.Text = "Edit Link";
-            this.btnEditLink.Size = new Size(80, 30);
-            this.btnEditLink.Location = new Point(90, 65);
-            this.btnEditLink.FlatStyle = FlatStyle.Flat;
-            this.btnEditLink.BackColor = Color.FromArgb(224, 224, 224);
-            this.btnEditLink.ForeColor = Color.Black;
-            this.btnEditLink.Font = new Font("Segoe UI", 9F);
-            this.btnEditLink.Cursor = Cursors.Hand;
-            this.btnEditLink.Click += new EventHandler(this.btnEditLink_Click);
-            this.panelSharing.Controls.Add(this.btnEditLink);
-
-            // Create the generate link button
-            this.btnGenerateLink = new Button();
-            this.btnGenerateLink.Text = "Generate Public Link";
-            this.btnGenerateLink.Size = new Size(140, 30);
-            this.btnGenerateLink.Location = new Point(180, 65);
-            this.btnGenerateLink.FlatStyle = FlatStyle.Flat;
-            this.btnGenerateLink.BackColor = Color.FromArgb(66, 139, 202);
-            this.btnGenerateLink.ForeColor = Color.White;
-            this.btnGenerateLink.Font = new Font("Segoe UI", 9F);
-            this.btnGenerateLink.Cursor = Cursors.Hand;
-            this.btnGenerateLink.Click += new EventHandler(this.btnGenerateLink_Click);
-            this.panelSharing.Controls.Add(this.btnGenerateLink);
-
-            // Create the Select Save button
-            this.btnSelectSaveFile = new Button();
-            this.btnSelectSaveFile.Text = "Select Save File";
-            this.btnSelectSaveFile.Size = new Size(180, 45);
-            this.btnSelectSaveFile.Location = new Point(20, 360);
-            this.btnSelectSaveFile.FlatStyle = FlatStyle.Flat;
-            this.btnSelectSaveFile.BackColor = Color.FromArgb(66, 139, 202);
-            this.btnSelectSaveFile.ForeColor = Color.White;
-            this.btnSelectSaveFile.Font = new Font("Segoe UI", 10F);
-            this.btnSelectSaveFile.Cursor = Cursors.Hand;
-            this.btnSelectSaveFile.Click += new EventHandler(this.btnSelectSaveFile_Click);
-
-            // Create the Upload to Drive button
-            this.btnUploadToDrive = new Button();
-            this.btnUploadToDrive.Text = "Upload to Drive";
-            this.btnUploadToDrive.Size = new Size(180, 45);
-            this.btnUploadToDrive.Location = new Point(210, 360);
-            this.btnUploadToDrive.FlatStyle = FlatStyle.Flat;
-            this.btnUploadToDrive.BackColor = Color.FromArgb(217, 83, 79);
-            this.btnUploadToDrive.ForeColor = Color.White;
-            this.btnUploadToDrive.Font = new Font("Segoe UI", 10F);
-            this.btnUploadToDrive.Cursor = Cursors.Hand;
-            this.btnUploadToDrive.Click += new EventHandler(this.btnUploadToDrive_Click);
-
-            // Create the Download from Drive button
-            this.btnDownloadFromDrive = new Button();
-            this.btnDownloadFromDrive.Text = "Download from Drive";
-            this.btnDownloadFromDrive.Size = new Size(180, 45);
-            this.btnDownloadFromDrive.Location = new Point(400, 360);
-            this.btnDownloadFromDrive.FlatStyle = FlatStyle.Flat;
-            this.btnDownloadFromDrive.BackColor = Color.FromArgb(92, 184, 92);
-            this.btnDownloadFromDrive.ForeColor = Color.White;
-            this.btnDownloadFromDrive.Font = new Font("Segoe UI", 10F);
-            this.btnDownloadFromDrive.Cursor = Cursors.Hand;
-            this.btnDownloadFromDrive.Click += new EventHandler(this.btnDownloadFromDrive_Click);
-
-            // Create the status label
-            this.lblStatus = new Label();
-            this.lblStatus.Text = "Status: Ready";
-            this.lblStatus.Font = new Font("Segoe UI", 9F);
-            this.lblStatus.AutoSize = true;
-            this.lblStatus.ForeColor = Color.FromArgb(80, 80, 80);
-            this.lblStatus.Location = new Point(20, 470);
-
-            // Create game status panel
-            this.panelGameStatus = new Panel();
-            this.panelGameStatus.Size = new Size(325, 40);
-            this.panelGameStatus.Location = new Point(20, 420);
-            this.panelGameStatus.BorderStyle = BorderStyle.FixedSingle;
-
-            // Create game status label
-            this.lblGameStatus = new Label();
-            this.lblGameStatus.Text = "Factorio: Not Running";
-            this.lblGameStatus.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            this.lblGameStatus.AutoSize = true;
-            this.lblGameStatus.Location = new Point(10, 9);
-            this.lblGameStatus.ForeColor = Color.DarkRed;
-            this.panelGameStatus.Controls.Add(this.lblGameStatus);
-
-            // Create last action panel
-            this.panelLastAction = new Panel();
-            this.panelLastAction.Size = new Size(325, 40);
-            this.panelLastAction.Location = new Point(355, 420);
-            this.panelLastAction.BorderStyle = BorderStyle.FixedSingle;
-            this.panelLastAction.BackColor = Color.White;
-
-            // Create last action label
-            this.lblLastAction = new Label();
-            this.lblLastAction.Text = "No sync actions yet";
-            this.lblLastAction.Font = new Font("Segoe UI", 10F);
-            this.lblLastAction.AutoSize = true;
-            this.lblLastAction.Location = new Point(10, 9);
-            this.lblLastAction.ForeColor = Color.FromArgb(80, 80, 80);
-            this.panelLastAction.Controls.Add(this.lblLastAction);
-
-
-            //Settings button
-            this.btnSettings = new Button();
-            this.btnSettings.Text = "⚙️ Settings";
-            this.btnSettings.Size = new Size(120, 40);
-            this.btnSettings.Location = new Point(560, 20);
-            this.btnSettings.FlatStyle = FlatStyle.Flat;
-            this.btnSettings.BackColor = Color.FromArgb(100, 100, 100);
-            this.btnSettings.ForeColor = Color.White;
-            this.btnSettings.Font = new Font("Segoe UI", 9F);
-            this.btnSettings.Cursor = Cursors.Hand;
-            this.btnSettings.Click += new EventHandler(this.btnSettings_Click);
             this.panelHeader.Controls.Add(this.btnSettings);
-
-            /**
-            // Create timer for checking game state
-            this.timerGameState = new System.Windows.Forms.Timer(this.components);
-            this.timerGameState.Interval = 500; // Check every half second
-            this.timerGameState.Tick += new EventHandler(this.On05SecondsTimer);
-            */
-
-
-            // Add all controls to the form
+            this.panelHeader.Dock = System.Windows.Forms.DockStyle.Top;
+            this.panelHeader.Location = new System.Drawing.Point(0, 0);
+            this.panelHeader.Name = "panelHeader";
+            this.panelHeader.Size = new System.Drawing.Size(700, 70);
+            this.panelHeader.TabIndex = 0;
+            // 
+            // lblTitle
+            // 
+            this.lblTitle.AutoSize = true;
+            this.lblTitle.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Bold);
+            this.lblTitle.ForeColor = System.Drawing.Color.White;
+            this.lblTitle.Location = new System.Drawing.Point(20, 20);
+            this.lblTitle.Name = "lblTitle";
+            this.lblTitle.Size = new System.Drawing.Size(277, 41);
+            this.lblTitle.TabIndex = 0;
+            this.lblTitle.Text = "Factorio Save Sync";
+            // 
+            // btnSettings
+            // 
+            this.btnSettings.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(100)))), ((int)(((byte)(100)))), ((int)(((byte)(100)))));
+            this.btnSettings.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnSettings.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnSettings.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnSettings.ForeColor = System.Drawing.Color.White;
+            this.btnSettings.Location = new System.Drawing.Point(560, 15);
+            this.btnSettings.Name = "btnSettings";
+            this.btnSettings.Size = new System.Drawing.Size(120, 40);
+            this.btnSettings.TabIndex = 1;
+            this.btnSettings.Text = "⚙️ Settings";
+            this.btnSettings.UseVisualStyleBackColor = false;
+            this.btnSettings.Click += new System.EventHandler(this.btnSettings_Click);
+            // 
+            // panelSaveInfo
+            // 
+            this.panelSaveInfo.BackColor = System.Drawing.Color.White;
+            this.panelSaveInfo.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panelSaveInfo.Controls.Add(this.lblCurrentSave);
+            this.panelSaveInfo.Controls.Add(this.lblLastModified);
+            this.panelSaveInfo.Controls.Add(this.lblDriveLastModified);
+            this.panelSaveInfo.Controls.Add(this.lblDriveLocation);
+            this.panelSaveInfo.Controls.Add(this.lblSavePath);
+            this.panelSaveInfo.Location = new System.Drawing.Point(20, 90);
+            this.panelSaveInfo.Name = "panelSaveInfo";
+            this.panelSaveInfo.Size = new System.Drawing.Size(660, 150);
+            this.panelSaveInfo.TabIndex = 1;
+            // 
+            // lblCurrentSave
+            // 
+            this.lblCurrentSave.AutoSize = true;
+            this.lblCurrentSave.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
+            this.lblCurrentSave.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(41)))), ((int)(((byte)(50)))), ((int)(((byte)(65)))));
+            this.lblCurrentSave.Location = new System.Drawing.Point(10, 10);
+            this.lblCurrentSave.Name = "lblCurrentSave";
+            this.lblCurrentSave.Size = new System.Drawing.Size(186, 25);
+            this.lblCurrentSave.TabIndex = 0;
+            this.lblCurrentSave.Text = "Current Save: None";
+            // 
+            // lblLastModified
+            // 
+            this.lblLastModified.AutoSize = true;
+            this.lblLastModified.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.lblLastModified.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.lblLastModified.Location = new System.Drawing.Point(10, 40);
+            this.lblLastModified.Name = "lblLastModified";
+            this.lblLastModified.Size = new System.Drawing.Size(189, 23);
+            this.lblLastModified.TabIndex = 1;
+            this.lblLastModified.Text = "Last Modified (Local): --";
+            // 
+            // lblDriveLastModified
+            // 
+            this.lblDriveLastModified.AutoSize = true;
+            this.lblDriveLastModified.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.lblDriveLastModified.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(120)))), ((int)(((byte)(215)))));
+            this.lblDriveLastModified.Location = new System.Drawing.Point(10, 70);
+            this.lblDriveLastModified.Name = "lblDriveLastModified";
+            this.lblDriveLastModified.Size = new System.Drawing.Size(189, 23);
+            this.lblDriveLastModified.TabIndex = 2;
+            this.lblDriveLastModified.Text = "Last Modified (Drive): --";
+            // 
+            // lblDriveLocation
+            // 
+            this.lblDriveLocation.AutoSize = true;
+            this.lblDriveLocation.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.lblDriveLocation.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(120)))), ((int)(((byte)(215)))));
+            this.lblDriveLocation.Location = new System.Drawing.Point(10, 100);
+            this.lblDriveLocation.Name = "lblDriveLocation";
+            this.lblDriveLocation.Size = new System.Drawing.Size(218, 20);
+            this.lblDriveLocation.TabIndex = 3;
+            this.lblDriveLocation.Text = "Drive Location: Not determined";
+            // 
+            // lblSavePath
+            // 
+            this.lblSavePath.AutoSize = true;
+            this.lblSavePath.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.lblSavePath.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(100)))), ((int)(((byte)(100)))), ((int)(((byte)(100)))));
+            this.lblSavePath.Location = new System.Drawing.Point(10, 125);
+            this.lblSavePath.MaximumSize = new System.Drawing.Size(640, 50);
+            this.lblSavePath.Name = "lblSavePath";
+            this.lblSavePath.Size = new System.Drawing.Size(91, 20);
+            this.lblSavePath.TabIndex = 4;
+            this.lblSavePath.Text = "Save Path: --";
+            // 
+            // btnSelectSaveFile
+            // 
+            this.btnSelectSaveFile.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(66)))), ((int)(((byte)(139)))), ((int)(((byte)(202)))));
+            this.btnSelectSaveFile.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnSelectSaveFile.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnSelectSaveFile.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold);
+            this.btnSelectSaveFile.ForeColor = System.Drawing.Color.White;
+            this.btnSelectSaveFile.Location = new System.Drawing.Point(20, 250);
+            this.btnSelectSaveFile.Name = "btnSelectSaveFile";
+            this.btnSelectSaveFile.Size = new System.Drawing.Size(170, 40);
+            this.btnSelectSaveFile.TabIndex = 2;
+            this.btnSelectSaveFile.Text = "Select Save File";
+            this.btnSelectSaveFile.UseVisualStyleBackColor = false;
+            this.btnSelectSaveFile.Click += new System.EventHandler(this.btnSelectSaveFile_Click);
+            // 
+            // btnSearchSave
+            // 
+            this.btnSearchSave.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(173)))), ((int)(((byte)(78)))));
+            this.btnSearchSave.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnSearchSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnSearchSave.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Bold);
+            this.btnSearchSave.ForeColor = System.Drawing.Color.White;
+            this.btnSearchSave.Location = new System.Drawing.Point(20, 340);
+            this.btnSearchSave.Name = "btnSearchSave";
+            this.btnSearchSave.Size = new System.Drawing.Size(170, 40);
+            this.btnSearchSave.TabIndex = 3;
+            this.btnSearchSave.Text = "Search on Drive";
+            this.btnSearchSave.UseVisualStyleBackColor = false;
+            this.btnSearchSave.Click += new System.EventHandler(this.btnSearchSave_Click);
+            // 
+            // btnUploadToDrive
+            // 
+            this.btnUploadToDrive.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(217)))), ((int)(((byte)(83)))), ((int)(((byte)(79)))));
+            this.btnUploadToDrive.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnUploadToDrive.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnUploadToDrive.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold);
+            this.btnUploadToDrive.ForeColor = System.Drawing.Color.White;
+            this.btnUploadToDrive.Location = new System.Drawing.Point(20, 295);
+            this.btnUploadToDrive.Name = "btnUploadToDrive";
+            this.btnUploadToDrive.Size = new System.Drawing.Size(170, 40);
+            this.btnUploadToDrive.TabIndex = 4;
+            this.btnUploadToDrive.Text = "Upload to Drive";
+            this.btnUploadToDrive.UseVisualStyleBackColor = false;
+            this.btnUploadToDrive.Click += new System.EventHandler(this.btnUploadToDrive_Click);
+            // 
+            // btnDownloadFromDrive
+            // 
+            this.btnDownloadFromDrive.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.btnDownloadFromDrive.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnDownloadFromDrive.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.btnDownloadFromDrive.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold);
+            this.btnDownloadFromDrive.ForeColor = System.Drawing.Color.White;
+            this.btnDownloadFromDrive.Location = new System.Drawing.Point(20, 385);
+            this.btnDownloadFromDrive.Name = "btnDownloadFromDrive";
+            this.btnDownloadFromDrive.Size = new System.Drawing.Size(170, 40);
+            this.btnDownloadFromDrive.TabIndex = 5;
+            this.btnDownloadFromDrive.Text = "Download from Drive";
+            this.btnDownloadFromDrive.UseVisualStyleBackColor = false;
+            this.btnDownloadFromDrive.Click += new System.EventHandler(this.btnDownloadFromDrive_Click);
+            // 
+            // panelSharing
+            // 
+            this.panelSharing.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(245)))), ((int)(((byte)(245)))));
+            this.panelSharing.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panelSharing.Controls.Add(this.lblSharingTitle);
+            this.panelSharing.Controls.Add(this.btnCopyLink);
+            this.panelSharing.Controls.Add(this.btnEditLink);
+            this.panelSharing.Controls.Add(this.btnGenerateLink);
+            this.panelSharing.Controls.Add(this.txtFolderUrl);
+            this.panelSharing.Controls.Add(this.btnOpenLink);
+            this.panelSharing.Location = new System.Drawing.Point(200, 250);
+            this.panelSharing.Name = "panelSharing";
+            this.panelSharing.Size = new System.Drawing.Size(484, 175);
+            this.panelSharing.TabIndex = 6;
+            // 
+            // lblSharingTitle
+            // 
+            this.lblSharingTitle.AutoSize = true;
+            this.lblSharingTitle.Font = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
+            this.lblSharingTitle.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(41)))), ((int)(((byte)(50)))), ((int)(((byte)(65)))));
+            this.lblSharingTitle.Location = new System.Drawing.Point(10, 14);
+            this.lblSharingTitle.Name = "lblSharingTitle";
+            this.lblSharingTitle.Size = new System.Drawing.Size(184, 25);
+            this.lblSharingTitle.TabIndex = 0;
+            this.lblSharingTitle.Text = "Share With Friends:";
+            // 
+            // btnCopyLink
+            // 
+            this.btnCopyLink.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.btnCopyLink.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnCopyLink.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnCopyLink.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnCopyLink.ForeColor = System.Drawing.Color.Black;
+            this.btnCopyLink.Location = new System.Drawing.Point(15, 130);
+            this.btnCopyLink.Name = "btnCopyLink";
+            this.btnCopyLink.Size = new System.Drawing.Size(67, 30);
+            this.btnCopyLink.TabIndex = 2;
+            this.btnCopyLink.Text = "Copy";
+            this.btnCopyLink.UseVisualStyleBackColor = false;
+            this.btnCopyLink.Click += new System.EventHandler(this.btnCopyLink_Click);
+            // 
+            // btnEditLink
+            // 
+            this.btnEditLink.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(92)))), ((int)(((byte)(184)))), ((int)(((byte)(92)))));
+            this.btnEditLink.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnEditLink.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnEditLink.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnEditLink.ForeColor = System.Drawing.Color.White;
+            this.btnEditLink.Location = new System.Drawing.Point(330, 100);
+            this.btnEditLink.Name = "btnEditLink";
+            this.btnEditLink.Size = new System.Drawing.Size(130, 60);
+            this.btnEditLink.TabIndex = 3;
+            this.btnEditLink.Text = "Edit Link";
+            this.btnEditLink.UseVisualStyleBackColor = false;
+            this.btnEditLink.Click += new System.EventHandler(this.btnEditLink_Click);
+            // 
+            // btnGenerateLink
+            // 
+            this.btnGenerateLink.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(66)))), ((int)(((byte)(139)))), ((int)(((byte)(202)))));
+            this.btnGenerateLink.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnGenerateLink.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnGenerateLink.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnGenerateLink.ForeColor = System.Drawing.Color.White;
+            this.btnGenerateLink.Location = new System.Drawing.Point(197, 130);
+            this.btnGenerateLink.Name = "btnGenerateLink";
+            this.btnGenerateLink.Size = new System.Drawing.Size(127, 30);
+            this.btnGenerateLink.TabIndex = 4;
+            this.btnGenerateLink.Text = "Generate Link";
+            this.btnGenerateLink.UseVisualStyleBackColor = false;
+            this.btnGenerateLink.Click += new System.EventHandler(this.btnGenerateLink_Click);
+            // 
+            // txtFolderUrl
+            // 
+            this.txtFolderUrl.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtFolderUrl.BackColor = System.Drawing.Color.White;
+            this.txtFolderUrl.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.txtFolderUrl.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.txtFolderUrl.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(120)))), ((int)(((byte)(215)))));
+            this.txtFolderUrl.Location = new System.Drawing.Point(11, 64);
+            this.txtFolderUrl.Name = "txtFolderUrl";
+            this.txtFolderUrl.ReadOnly = true;
+            this.txtFolderUrl.Size = new System.Drawing.Size(400, 27);
+            this.txtFolderUrl.TabIndex = 5;
+            this.txtFolderUrl.Text = "No sharing link available";
+            this.txtFolderUrl.Click += new System.EventHandler(this.txtFolderUrl_Click);
+            // 
+            // btnOpenLink
+            // 
+            this.btnOpenLink.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(120)))), ((int)(((byte)(215)))));
+            this.btnOpenLink.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnOpenLink.Enabled = false;
+            this.btnOpenLink.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnOpenLink.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.btnOpenLink.ForeColor = System.Drawing.Color.White;
+            this.btnOpenLink.Location = new System.Drawing.Point(88, 130);
+            this.btnOpenLink.Name = "btnOpenLink";
+            this.btnOpenLink.Size = new System.Drawing.Size(103, 30);
+            this.btnOpenLink.TabIndex = 6;
+            this.btnOpenLink.Text = "🌐 Open";
+            this.btnOpenLink.UseVisualStyleBackColor = false;
+            this.btnOpenLink.Click += new System.EventHandler(this.btnOpenLink_Click);
+            // 
+            // panelGameStatus
+            // 
+            this.panelGameStatus.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panelGameStatus.Controls.Add(this.lblGameStatus);
+            this.panelGameStatus.Location = new System.Drawing.Point(20, 430);
+            this.panelGameStatus.Name = "panelGameStatus";
+            this.panelGameStatus.Size = new System.Drawing.Size(325, 40);
+            this.panelGameStatus.TabIndex = 7;
+            // 
+            // lblGameStatus
+            // 
+            this.lblGameStatus.AutoSize = true;
+            this.lblGameStatus.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
+            this.lblGameStatus.ForeColor = System.Drawing.Color.DarkRed;
+            this.lblGameStatus.Location = new System.Drawing.Point(40, 10);
+            this.lblGameStatus.Name = "lblGameStatus";
+            this.lblGameStatus.Size = new System.Drawing.Size(186, 23);
+            this.lblGameStatus.TabIndex = 0;
+            this.lblGameStatus.Text = "Factorio: Not Running";
+            this.lblGameStatus.Click += new System.EventHandler(this.lblGameStatus_Click);
+            // 
+            // panelLastAction
+            // 
+            this.panelLastAction.BackColor = System.Drawing.Color.White;
+            this.panelLastAction.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panelLastAction.Controls.Add(this.lblLastAction);
+            this.panelLastAction.Location = new System.Drawing.Point(365, 430);
+            this.panelLastAction.Name = "panelLastAction";
+            this.panelLastAction.Size = new System.Drawing.Size(320, 40);
+            this.panelLastAction.TabIndex = 8;
+            // 
+            // lblLastAction
+            // 
+            this.lblLastAction.AutoSize = true;
+            this.lblLastAction.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.lblLastAction.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.lblLastAction.Location = new System.Drawing.Point(15, 10);
+            this.lblLastAction.Name = "lblLastAction";
+            this.lblLastAction.Size = new System.Drawing.Size(158, 23);
+            this.lblLastAction.TabIndex = 0;
+            this.lblLastAction.Text = "No sync actions yet";
+            // 
+            // lblStatus
+            // 
+            this.lblStatus.AutoSize = true;
+            this.lblStatus.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.lblStatus.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.lblStatus.Location = new System.Drawing.Point(15, 475);
+            this.lblStatus.Name = "lblStatus";
+            this.lblStatus.Size = new System.Drawing.Size(97, 20);
+            this.lblStatus.TabIndex = 9;
+            this.lblStatus.Text = "Status: Ready";
+            // 
+            // MainForm
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackColor = System.Drawing.Color.WhiteSmoke;
+            this.ClientSize = new System.Drawing.Size(700, 500);
             this.Controls.Add(this.panelHeader);
             this.Controls.Add(this.panelSaveInfo);
-            this.Controls.Add(this.panelSharing);
             this.Controls.Add(this.btnSelectSaveFile);
+            this.Controls.Add(this.btnSearchSave);
             this.Controls.Add(this.btnUploadToDrive);
             this.Controls.Add(this.btnDownloadFromDrive);
+            this.Controls.Add(this.panelSharing);
             this.Controls.Add(this.panelGameStatus);
             this.Controls.Add(this.panelLastAction);
             this.Controls.Add(this.lblStatus);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.Name = "MainForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            this.Text = "Factorio Save Sync";
+            this.panelHeader.ResumeLayout(false);
+            this.panelHeader.PerformLayout();
+            this.panelSaveInfo.ResumeLayout(false);
+            this.panelSaveInfo.PerformLayout();
+            this.panelSharing.ResumeLayout(false);
+            this.panelSharing.PerformLayout();
+            this.panelGameStatus.ResumeLayout(false);
+            this.panelGameStatus.PerformLayout();
+            this.panelLastAction.ResumeLayout(false);
+            this.panelLastAction.PerformLayout();
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
 
     }

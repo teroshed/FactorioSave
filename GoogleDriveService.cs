@@ -11,9 +11,29 @@ using Google.Apis.Services;
 using Google.Apis.Util.Store;
 using Newtonsoft.Json;
 using System.Windows.Forms;
+using System.Linq;
 
 namespace FactorioSave
 {
+
+    /// <summary>
+    /// Class to hold detailed information about a file's location on Google Drive
+    /// </summary>
+    public class DriveFileLocation
+    {
+        public string Path { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Id { get; set; } = string.Empty;
+        public string ParentName { get; set; } = string.Empty;
+        public string Owner { get; set; } = "Unknown";
+        public DateTime? ModifiedTime { get; set; }
+
+        public override string ToString()
+        {
+            return Path;
+        }
+    }
+
     public class GoogleDriveService
     {
         // The Drive API service
@@ -294,7 +314,7 @@ namespace FactorioSave
         /// <summary>
         /// Makes sure the Factorio saves folder exists in Google Drive
         /// </summary>
-        private async Task EnsureFactorioFolderExistsAsync()
+        public async Task EnsureFactorioFolderExistsAsync()
         {
             try
             {
@@ -553,6 +573,60 @@ namespace FactorioSave
             {
                 Console.WriteLine($"Error downloading save: {ex.Message}");
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets detailed information about a file's location in Google Drive including owner and modified time
+        /// </summary>
+        public async Task<DriveFileLocation> GetFileLocationAsync(string fileId)
+        {
+            try
+            {
+                // Ensure the service is initialized
+                if (_driveService == null)
+                {
+                    if (!await InitializeAsync())
+                        return new DriveFileLocation { Path = "Unknown location" };
+                }
+
+                // Get the file to find its parents, owner and modified time
+                var fileRequest = _driveService.Files.Get(fileId);
+                fileRequest.Fields = "name, parents, owners, modifiedTime";
+                var file = await fileRequest.ExecuteAsync();
+
+                // Create the result object
+                var result = new DriveFileLocation
+                {
+                    Name = file.Name,
+                    Id = fileId,
+                    ModifiedTime = file.ModifiedTimeDateTimeOffset?.LocalDateTime,
+                    Owner = file.Owners?.FirstOrDefault()?.DisplayName ?? "Unknown"
+                };
+
+                // If file has no parents, it's in root
+                if (file.Parents == null || file.Parents.Count == 0)
+                {
+                    result.Path = $"/{file.Name}";
+                    return result;
+                }
+
+                // Get the parent folder
+                var parentId = file.Parents[0];
+                var parentRequest = _driveService.Files.Get(parentId);
+                parentRequest.Fields = "name";
+                var parent = await parentRequest.ExecuteAsync();
+
+                // Set the path
+                result.Path = $"/{parent.Name}/{file.Name}";
+                result.ParentName = parent.Name;
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting file location: {ex.Message}");
+                return new DriveFileLocation { Path = "Unknown location" };
             }
         }
 

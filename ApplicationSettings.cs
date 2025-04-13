@@ -15,6 +15,9 @@ namespace FactorioSave
         public SyncAction CloseAction { get; set; } = SyncAction.Prompt;
         public SyncAction OpenAction { get; set; } = SyncAction.Auto;
 
+
+        public string DriveTargetLocation { get; set; } = string.Empty;
+
         // Last used folder link
         public string LastSharedFolderLink { get; set; } = string.Empty;
 
