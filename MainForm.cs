@@ -748,7 +748,7 @@ namespace FactorioSave
                 if (File.Exists(_factorioMonitor.GetFactorioSavesDirectory()))
                 {
                     TimeSpan elapsed = DateTime.Now - _lastModifiedLocally;
-                    lblLastModified.Text = $"Last Modified locally: {formatTime(elapsed)} / {_lastModifiedLocally.ToString("dd.MM.yyyy HH:MM:ss")}";
+                    lblLastModified.Text = $"Last Modified locally: {FactorioMonitor.FormatTime(elapsed)} / {_lastModifiedLocally.ToString("dd.MM.yyyy HH:MM:ss")}";
                 }
                 else
                 {
@@ -919,7 +919,7 @@ namespace FactorioSave
 
             // Calculate the time difference
             TimeSpan elapsed = DateTime.Now - _lastActionTime;
-            string timeText = formatTime(elapsed);
+            string timeText = FactorioMonitor.FormatTime(elapsed);
 
             // Update the label
             lblLastAction.Text = $"Last {_lastActionType}: {timeText}";
@@ -935,13 +935,14 @@ namespace FactorioSave
 
             // Calculate the time difference
             TimeSpan elapsed = DateTime.Now - _lastModifiedDrive;
-            string timeText = formatTime(elapsed);
+            string timeText = FactorioMonitor.FormatTime(elapsed);
 
             // Update the label
             lblDriveLastModified.Text = $"Last Modified on Drive: {timeText} / {_lastModifiedDrive.ToString("dd.MM.yyyy HH:MM:ss")}";
         }
 
-        private string formatTime(TimeSpan elapsed)
+        /**
+        public static string FormatTime(TimeSpan elapsed)
         {
             string timeText;
 
@@ -949,7 +950,7 @@ namespace FactorioSave
             if (elapsed.TotalDays > 3)
             {
                 // For more than 3 days, show the actual date
-                timeText = _lastActionTime.ToString("yyyy-MM-dd HH:mm");
+                timeText = elapsed.ToString("dd.MM.yyyy HH:mm");
             }
             else if (elapsed.TotalDays >= 1)
             {
@@ -977,7 +978,7 @@ namespace FactorioSave
             }
 
             return timeText;
-        }
+        } */
 
 
         // Handles the Open button click to open the link in a browser

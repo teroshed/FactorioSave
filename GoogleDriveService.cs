@@ -818,44 +818,7 @@ namespace FactorioSave
         }
     }
 
-    /// <summary>
-    /// Enum representing the access status of a Google Drive folder
-    /// </summary>
-    public enum LinkAccessStatus
-    {
-        Invalid,
-        Private,
-        SharedLimited,
-        PublicReadOnly,
-        PublicWritable
-    }
-
-    /// <summary>
-    /// Class representing the access status of a Google Drive folder
-    /// </summary>
-    public class LinkStatus
-    {
-        public LinkAccessStatus Status { get; set; }
-        public string Message { get; set; }
-        public string FolderName { get; set; }
-
-        public System.Drawing.Color GetStatusColor()
-        {
-            switch (Status)
-            {
-                case LinkAccessStatus.PublicWritable:
-                    return System.Drawing.Color.FromArgb(92, 184, 92); // Green
-                case LinkAccessStatus.PublicReadOnly:
-                    return System.Drawing.Color.FromArgb(240, 173, 78); // Yellow
-                case LinkAccessStatus.SharedLimited:
-                    return System.Drawing.Color.FromArgb(91, 192, 222); // Blue
-                case LinkAccessStatus.Private:
-                    return System.Drawing.Color.FromArgb(217, 83, 79); // Red
-                default:
-                    return System.Drawing.Color.FromArgb(217, 83, 79); // Red for Invalid
-            }
-        }
-    }
+    
 
 
     /// <summary>

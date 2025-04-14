@@ -235,7 +235,7 @@ namespace FactorioSave
             this.btnUploadToDrive.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(217)))), ((int)(((byte)(83)))), ((int)(((byte)(79)))));
             this.btnUploadToDrive.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnUploadToDrive.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnUploadToDrive.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold);
+            this.btnUploadToDrive.Font = new System.Drawing.Font("Segoe UI Semibold", 10.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnUploadToDrive.ForeColor = System.Drawing.Color.White;
             this.btnUploadToDrive.Location = new System.Drawing.Point(20, 295);
             this.btnUploadToDrive.Name = "btnUploadToDrive";
@@ -247,7 +247,7 @@ namespace FactorioSave
             // 
             // btnDownloadFromDrive
             // 
-            this.btnDownloadFromDrive.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.btnDownloadFromDrive.BackColor = System.Drawing.Color.PaleVioletRed;
             this.btnDownloadFromDrive.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnDownloadFromDrive.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
             this.btnDownloadFromDrive.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold);

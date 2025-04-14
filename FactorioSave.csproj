@@ -68,6 +68,12 @@
   <ItemGroup>
     <Compile Include="ApplicationSettings.cs" />
     <Compile Include="FactorioMonitor.cs" />
+    <Compile Include="SaveLocationDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SaveLocationDialog.Designer.cs">
+      <DependentUpon>SaveLocationDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="GoogleDriveService.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
