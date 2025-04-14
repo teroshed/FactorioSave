@@ -11,13 +11,20 @@ using System.Windows.Forms;
 
 namespace FactorioSave
 {
+    enum SyncDirection
+    {
+        Upload,
+        Download,
+        Auto
+    }
+
     public partial class MainForm : Form
     {
 
         
 
 
-        // Reference to our Factorio monitoring service
+        // Reference to the factorio monitoring service
         public readonly FactorioMonitor _factorioMonitor;
         private ApplicationSettings _appSettings;
         private readonly GoogleDriveService _googleDriveService;
@@ -41,6 +48,14 @@ namespace FactorioSave
         private bool _pulseIncreasing = true;
         private int _pulseValue = 0;
 
+        // Session tracking stuff
+        private System.Windows.Forms.Timer _sessionTimer;
+        private DateTime _localFileLastCheckedTime = DateTime.MinValue;
+        private DateTime _driveFileLastCheckedTime = DateTime.MinValue;
+        private bool _localNewerThanDrive = false;
+        private bool _driveNewerThanLocal = false;
+        private string _lastDriveModifiedBy = string.Empty;
+
 
 
 
@@ -49,10 +64,8 @@ namespace FactorioSave
         {
 
 
-        // This method is automatically generated and sets up the UI components
             InitializeComponent();
 
-            //ApplyRoundedCorners();
 
 
             _googleDriveService = new GoogleDriveService();
@@ -71,10 +84,21 @@ namespace FactorioSave
             _appSettings = ApplicationSettings.LoadSettings();
 
 
+            bool isEmpty = string.IsNullOrEmpty(_sharingLink);
+            if (isEmpty)
+            {
+                txtFolderUrl.Text = "No sharing link available";
+                btnOpenLink.Enabled = false;
+
+            }
+            else
+            {
+                btnOpenLink.Enabled = true;
+                txtFolderUrl.Text = _sharingLink;
+            }
+
             _sharingLink = _appSettings.LastSharedFolderLink;
-            txtFolderUrl.Text = string.IsNullOrEmpty(_sharingLink) ?
-                "No sharing link available" : _sharingLink;
-            btnOpenLink.Enabled = !string.IsNullOrEmpty(_sharingLink);
+        
 
             if (!string.IsNullOrEmpty(_appSettings.DriveTargetLocation))
             {
@@ -189,6 +213,157 @@ namespace FactorioSave
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             };
+        }
+
+        private async void PerformSync(SyncDirection direction)
+        {
+            try
+            {
+                // Check if a save file is selected
+                if (string.IsNullOrEmpty(_factorioMonitor.SaveFileName) || _factorioMonitor.SaveFileName == "None")
+                {
+                    MessageBox.Show(
+                        "Please select a save file first.",
+                        "No Save Selected",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Check if the save file exists locally
+                string savePath = _factorioMonitor.GetFactorioSavesDirectory();
+                bool localExists = File.Exists(savePath);
+
+                // Check if we have a Drive location
+                bool hasDriveLocation = !string.IsNullOrEmpty(_appSettings.DriveTargetLocation) ||
+                                    !string.IsNullOrEmpty(_googleDriveService.GetFolderId());
+
+                if (!hasDriveLocation)
+                {
+                    MessageBox.Show(
+                        "Please set up a Google Drive location first.",
+                        "Drive Not Configured",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Get sync direction based on file timestamps
+                SyncDirection effectiveDirection = direction;
+                if (direction == SyncDirection.Auto)
+                {
+                    // Check if we need to update the timestamp comparisons
+                    if ((DateTime.Now - _localFileLastCheckedTime).TotalMinutes > 1)
+                    {
+                        await UpdateLastModifiedLocallyAsync();
+                        _localFileLastCheckedTime = DateTime.Now;
+                    }
+
+                    if ((DateTime.Now - _driveFileLastCheckedTime).TotalMinutes > 1)
+                    {
+                        await UpdateLastModifiedDriveAsync();
+                        _driveFileLastCheckedTime = DateTime.Now;
+                    }
+
+                    // Determine which file is newer
+                    if (!localExists)
+                    {
+                        effectiveDirection = SyncDirection.Download;
+                    }
+                    else if (_localNewerThanDrive)
+                    {
+                        effectiveDirection = SyncDirection.Upload;
+                    }
+                    else if (_driveNewerThanLocal)
+                    {
+                        effectiveDirection = SyncDirection.Download;
+                    }
+                    else
+                    {
+                        // Files appear to be in sync
+                        lblStatus.Text = "Status: Files already in sync";
+                        return;
+                    }
+                }
+
+                // Perform the sync
+                lblStatus.Text = $"Status: {(effectiveDirection == SyncDirection.Upload ? "Uploading" : "Downloading")}...";
+
+                if (effectiveDirection == SyncDirection.Upload)
+                {
+                    if (!localExists)
+                    {
+                        MessageBox.Show(
+                            "The local save file does not exist.",
+                            "File Not Found",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    await UploadSaveToGoogleDrive();
+
+                    _factorioMonitor.RecordDriveSync("Upload", _factorioMonitor.SaveFileName,
+                        _googleDriveService.Credentials.UserId ?? "You");
+                }
+                else
+                {
+                    await _googleDriveService.DownloadSaveAsync(_factorioMonitor.SaveFileName, savePath);
+
+                    // Record the download action
+                    RecordSyncAction("Download");
+
+                    // Record in session tracker
+                    _factorioMonitor.RecordDriveSync("Download", _factorioMonitor.SaveFileName,
+                        _lastDriveModifiedBy);
+
+                    lblStatus.Text = "Status: Download successful!";
+                    await UpdateLastModifiedLocallyAsync();
+                    UpdateLastLocalDisplay();
+                }
+
+                // Refresh the information display
+                UpdateSaveFileDisplay();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Error during sync: {ex.Message}",
+                    "Sync Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+
+                lblStatus.Text = "Status: Sync failed.";
+            }
+        }
+
+
+        // Update the Click handler for the new Sync button
+        private void btnSync_Click(object sender, EventArgs e)
+        {
+            PerformSync(SyncDirection.Auto);        
+        }
+
+        // Add a button to allow selecting the sync direction
+        private void btnSelectSync_Click(object sender, EventArgs e)
+        {
+            // Create a context menu with sync options
+            ContextMenuStrip contextMenu = new ContextMenuStrip();
+
+            ToolStripMenuItem uploadItem = new ToolStripMenuItem("Upload to Drive");
+            uploadItem.Click += (s, args) => PerformSync(SyncDirection.Upload);
+            contextMenu.Items.Add(uploadItem);
+
+            ToolStripMenuItem downloadItem = new ToolStripMenuItem("Download from Drive");
+            downloadItem.Click += (s, args) => PerformSync(SyncDirection.Download);
+            contextMenu.Items.Add(downloadItem);
+
+            ToolStripMenuItem autoItem = new ToolStripMenuItem("Auto Sync (Smart)");
+            autoItem.Click += (s, args) => PerformSync(SyncDirection.Auto);
+            contextMenu.Items.Add(autoItem);
+
+            // Show the context menu below the button
+            contextMenu.Show(selectDirection, new Point(0, selectDirection.Height));
         }
 
 
@@ -386,61 +561,88 @@ namespace FactorioSave
         // Handle edit link button click
         private void btnEditLink_Click(object sender, EventArgs e)
         {
-            // Show input dialog to enter custom folder ID
-            using (var inputForm = new Form())
+            // Create and show the custom dialog    
+            using (var dialog = new SaveLocationDialog(_googleDriveService, _sharingLink))
             {
-                inputForm.Width = 500;
-                inputForm.Height = 200;
-                inputForm.Text = "Enter Shared Folder Link";
-                inputForm.StartPosition = FormStartPosition.CenterParent;
-                inputForm.FormBorderStyle = FormBorderStyle.FixedDialog;
-                inputForm.MaximizeBox = false;
-                inputForm.MinimizeBox = false;
-
-                var label = new Label()
+                if (dialog.ShowDialog() == DialogResult.OK)
                 {
-                    Text = "Enter Google Drive folder link or ID:",
-                    AutoSize = true,
-                    Location = new Point(20, 20)
-                };
+                    SetCustomFolderLink(dialog.FolderLink);
 
-                var textBox = new TextBox()
-                {
-                    Text = _sharingLink,
-                    Width = 450,
-                    Location = new Point(20, 50)
-                };
-
-                var okButton = new Button()
-                {
-                    Text = "OK",
-                    DialogResult = DialogResult.OK,
-                    Location = new Point(290, 90)
-                };
-
-                var cancelButton = new Button()
-                {
-                    Text = "Cancel",
-                    DialogResult = DialogResult.Cancel,
-                    Location = new Point(370, 90)
-                };
-
-                inputForm.Controls.Add(label);
-                inputForm.Controls.Add(textBox);
-                inputForm.Controls.Add(okButton);
-                inputForm.Controls.Add(cancelButton);
-
-                inputForm.AcceptButton = okButton;
-                inputForm.CancelButton = cancelButton;
-
-                var result = inputForm.ShowDialog();
-
-                if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(textBox.Text))
-                {
-                    SetCustomFolderLink(textBox.Text);
+                    // Update the link status display
+                    UpdateLinkStatusDisplay(dialog.LinkStatus);
                 }
             }
         }
+
+        // Add a method to update the link status display
+        private void UpdateLinkStatusDisplay(LinkStatus status)
+        {
+            if (status == null)
+            {
+                lblLinkAccessStatus.Text = "Link status: Unknown";
+                lblLinkAccessStatus.ForeColor = Color.Gray;
+                return;
+            }
+
+            lblLinkAccessStatus.Text = $"Link status: {status.Message}";
+            lblLinkAccessStatus.ForeColor = status.GetStatusColor();
+        }
+
+        // Check and compare modification times
+        private async Task CompareModificationTimesAsync()
+        {
+            try
+            {
+                // Get local file time
+                await UpdateLastModifiedLocallyAsync();
+
+                // Get drive file time
+                await UpdateLastModifiedDriveAsync();
+
+                // Compare the times if both exist
+                if (_lastModifiedLocally != DateTime.MinValue && _lastModifiedDrive != DateTime.MinValue)
+                {
+                    // Allow for a small time difference (5 seconds) to account for precision differences
+                    TimeSpan diff = _lastModifiedLocally - _lastModifiedDrive;
+
+                    _localNewerThanDrive = diff.TotalSeconds > 5;
+                    _driveNewerThanLocal = diff.TotalSeconds < -5;
+
+                    // Update button color based on comparison
+                    UpdateSyncButtonAppearance();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error comparing modification times: {ex.Message}");
+            }
+        }
+
+        // Update the Sync button appearance based on comparison results
+        private void UpdateSyncButtonAppearance()
+        {
+            if (_localNewerThanDrive)
+            {
+                // Local is newer - suggest upload
+                btnSync.BackColor = Color.FromArgb(92, 184, 92); // Green
+                btnSync.Text = "↑ Sync to Drive";
+                StartButtonPulse(btnSync);
+            }
+            else if (_driveNewerThanLocal)
+            {
+                // Drive is newer - suggest download
+                btnSync.BackColor = Color.FromArgb(66, 139, 202); // Blue
+                btnSync.Text = "↓ Sync from Drive";
+                StartButtonPulse(btnSync);
+            }
+            else
+            {
+                // Files appear to be in sync
+                btnSync.BackColor = Color.FromArgb(240, 173, 78); // Yellow/amber
+                btnSync.Text = "⟲ Sync";
+                StopButtonPulse(btnSync);
+            }
+        }   
 
         // Update btnGenerateLink_Click method:
         private async void btnGenerateLink_Click(object sender, EventArgs e)
@@ -582,6 +784,7 @@ namespace FactorioSave
         {
             Invoke(new Action(() => {
                 UpdateGameStatusDisplay();
+                UpdateGameTimeDisplay();
 
                 switch (_appSettings.CloseAction)
                 {
@@ -601,10 +804,11 @@ namespace FactorioSave
             }));
         }
 
-        private void OnFactorioOpened(object sender, EventArgs e)
+        private void OnFactorioLaunched(object sender, EventArgs e)
         {
             Invoke(new Action(() => {
                 UpdateGameStatusDisplay();
+                UpdateGameTimeDisplay();
 
                 switch (_appSettings.OpenAction)
                 {
@@ -883,6 +1087,42 @@ namespace FactorioSave
             UpdateDriveTimeDisplay();
             UpdateLastLocalDisplay();
             UpdateLastModifiedLocallyAsync();
+            UpdateGameTimeDisplay();
+
+        }
+
+        // Updates the game time display
+        private void UpdateGameTimeDisplay()
+        {
+            // Update the labels with session information
+            if (_factorioMonitor != null)
+            {
+                GameSessionData sessionData = _factorioMonitor.SessionData;
+                if (!sessionData.LastLaunchTime.HasValue)
+                    return;
+                if (!sessionData.CurrentSessionStart.HasValue)
+                    return;
+                
+
+                string lastPlayedText = FactorioMonitor.FormatTime(sessionData.LastCloseTime ?? DateTime.Now);
+                TimeSpan duration = DateTime.Now - sessionData.CurrentSessionStart.Value;
+                sessionData.LastSessionDuration = duration;
+
+                string sessionInfo = _factorioMonitor.GetLastSessionInfo();
+                string currentSession = _factorioMonitor.GetCurrentSessionInfo();
+                string totalPlayTime = _factorioMonitor.GetTotalPlayTimeInfo();
+
+                lblLastPlayed.Text = lastPlayedText;
+                lblLastPlayedDuration.Text = $"Last launch: {FactorioMonitor.FormatTime(duration)}";
+                
+                if (_factorioMonitor.isRunning)
+                {
+                    lblSessionLength.Visible = true;
+                    lblSessionLength.Text = $"Current session: {FactorioMonitor.FormatTime(duration)}";
+                 }
+                lblTotalPlayTime.Text = totalPlayTime;
+
+            }
         }
 
         // Updates the game status indicator
@@ -938,7 +1178,9 @@ namespace FactorioSave
             string timeText = FactorioMonitor.FormatTime(elapsed);
 
             // Update the label
-            lblDriveLastModified.Text = $"Last Modified on Drive: {timeText} / {_lastModifiedDrive.ToString("dd.MM.yyyy HH:MM:ss")}";
+            string userInfo = string.IsNullOrEmpty(_lastDriveModifiedBy) ? "" : $" by {_lastDriveModifiedBy}";
+            lblDriveLastModified.Text = $"Last Modified on Drive: {timeText}{userInfo} / {_lastModifiedDrive.ToString("dd.MM.yyyy HH:mm:ss")}";
+
         }
 
         /**
@@ -1289,9 +1531,20 @@ namespace FactorioSave
                 if(info != null && info.ModifiedTimeOffset.HasValue)
                 {
                     DateTimeOffset offset = info.ModifiedTimeOffset.Value;
-                    _lastModifiedDrive = offset.LocalDateTime; 
-            
-                    
+                    _lastModifiedDrive = offset.LocalDateTime;
+
+                    var fileDetails = await _googleDriveService.GetFileDetailsAsync(_factorioMonitor.SaveFileName);
+                    if (fileDetails != null && fileDetails.LastModifiedBy != null)
+                    {
+                        _lastDriveModifiedBy = fileDetails.LastModifiedBy;
+                    }
+                    else
+                    {
+                        _lastDriveModifiedBy = "";
+                    }
+
+                    _driveFileLastCheckedTime = DateTime.Now;
+                        
                     UpdateDriveTimeDisplay();
             
                     
@@ -1314,9 +1567,16 @@ namespace FactorioSave
         }
 
         // Timer tick handler to update the last action time display
-        private async void On30SecondTimer(object sender, EventArgs e)
+        private void On30SecondTimer(object sender, EventArgs e)
         {
-            UpdateLastModifiedDriveAsync();
+            _ = Task.Run(async () =>
+            {
+                _ = UpdateLastModifiedDriveAsync();
+                await CompareModificationTimesAsync();
+                _localFileLastCheckedTime = DateTime.Now;
+
+            });
+            
         }
 
         // Records a new sync action
@@ -1331,10 +1591,47 @@ namespace FactorioSave
         {
 
         }
+
+        private void panelGameStatus_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void panelGameTime_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void lblSavePath_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblLastAction_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblLastPlayedDuration_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblLastPlayed_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void lblLastModified_Click(object sender, EventArgs e)
+        {
+
+        }
         // Timer tick event handler to update game status
 
 
         // Updates the game status indicator
 
     }
+
+    
 }

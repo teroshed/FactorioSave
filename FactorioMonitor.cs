@@ -145,6 +145,8 @@ namespace FactorioSave
             SaveSessionData();
         }
 
+        
+
         /// <summary>
         /// Gets formatted text about the last game session
         /// </summary>
@@ -153,15 +155,24 @@ namespace FactorioSave
             if (!_sessionData.LastLaunchTime.HasValue)
                 return "No recorded game sessions";
 
-            string result = $"Last played: {FactorioMonitor.FormatTime(_sessionData.LastCloseTime ?? DateTime.Now)}";
+            
+            string result = $"Last played: ";
+
 
             if (_sessionData.LastSessionDuration.HasValue)
             {
-                result += $"\nSession duration: {FactorioMonitor.FormatTime(_sessionData.LastSessionDuration.Value)}";
+                result += $"Last session duration: {FactorioMonitor.FormatTime(_sessionData.LastSessionDuration.Value)}";
             }
-
             return result;
         }
+
+        public string GetLastPlayed()
+        {
+            if (!_sessionData.LastLaunchTime.HasValue)
+                return null;
+            return FactorioMonitor.FormatTime(_sessionData.LastCloseTime ?? DateTime.Now);
+        }
+
 
         /// <summary>
         /// Gets current session information if the game is running

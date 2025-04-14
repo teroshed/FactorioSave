@@ -41,6 +41,11 @@ namespace FactorioSave
         private UserCredential _credential;
         private CancellationTokenSource _cancellationTokenSource;
 
+        public UserCredential Credentials 
+        {
+            get { return _credential; }
+        }
+        
 
         // The name of the folder in Google Drive where saves will be stored
         private const string FACTORIO_FOLDER_NAME = "FactorioSaves";
@@ -56,6 +61,8 @@ namespace FactorioSave
             _factorioFolderId = null;
             _credential = null;   
         }
+
+        
 
         public async Task<string> CreatePublicSharingLinkAsync()
         {
@@ -442,12 +449,74 @@ namespace FactorioSave
             }
         }
 
+        /// <summary>
+        /// Gets detailed information about a save file including who last modified it
+        /// </summary>
+        public async Task<FileDetails> GetFileDetailsAsync(string fileName)
+        {
+            try
+            {
+                // Ensure the service is initialized
+                if (_driveService == null)
+                {
+                    if (!await InitializeAsync())
+                        return null;
+                }
+
+                // Find the file ID
+                string fileId = await FindFileIdByNameAsync(fileName);
+
+                // If file doesn't exist in Drive
+                if (string.IsNullOrEmpty(fileId))
+                {
+                    return null;
+                }
+
+                // Get detailed file information
+                var request = _driveService.Files.Get(fileId);
+                request.Fields = "id, name, modifiedTime, lastModifyingUser, owners, size";
+
+                var file = await request.ExecuteAsync();
+
+                // Create result object
+                var details = new FileDetails
+                {
+                    Id = file.Id,
+                    Name = file.Name,
+                    ModifiedTime = file.ModifiedTimeDateTimeOffset?.LocalDateTime,
+                    Size = file.Size ?? 0
+                };
+
+                // Get last modifier if available
+                if (file.LastModifyingUser != null)
+                {
+                    details.LastModifiedBy = file.LastModifyingUser.DisplayName;
+                    details.LastModifierEmail = file.LastModifyingUser.EmailAddress;
+                    details.LastModifierPhotoUrl = file.LastModifyingUser.PhotoLink;
+                }
+
+                // Get owner if available
+                if (file.Owners != null && file.Owners.Count > 0)
+                {
+                    details.OwnerName = file.Owners[0].DisplayName;
+                    details.OwnerEmail = file.Owners[0].EmailAddress;
+                }
+
+                return details;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting file details: {ex.Message}");
+                return null;
+            }
+        }
+
         static void Upload_ProgressChanged(IUploadProgress progress) =>
                     System.Diagnostics.Debug.WriteLine(progress.Status + " " + progress.BytesSent);                
 
 
-                static void Upload_ResponseReceived(Google.Apis.Drive.v3.Data.File file) =>
-                    System.Diagnostics.Debug.WriteLine(file.Name + " was uploaded successfully");
+        static void Upload_ResponseReceived(Google.Apis.Drive.v3.Data.File file) =>
+            System.Diagnostics.Debug.WriteLine(file.Name + " was uploaded successfully");
 
         /// <summary>
         /// Uploads a save file to Google Drive, replacing any existing file with the same name
@@ -818,8 +887,31 @@ namespace FactorioSave
         }
     }
 
-    
 
+
+    /// <summary>
+    /// Class to hold detailed information about a file
+    /// </summary>
+    public class FileDetails
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public DateTime? ModifiedTime { get; set; }
+        public long Size { get; set; }
+        public string LastModifiedBy { get; set; }
+        public string LastModifierEmail { get; set; }
+        public string LastModifierPhotoUrl { get; set; }
+        public string OwnerName { get; set; }
+        public string OwnerEmail { get; set; }
+
+        /// <summary>
+        /// Returns a formatted string with file details
+        /// </summary>
+        public override string ToString()
+        {
+            return $"{Name} (modified {(ModifiedTime.HasValue ? ModifiedTime.Value.ToString() : "unknown")}{(!string.IsNullOrEmpty(LastModifiedBy) ? $" by {LastModifiedBy}" : "")})";
+        }
+    }
 
     /// <summary>
     /// Class to hold information about a save file
