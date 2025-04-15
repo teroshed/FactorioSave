@@ -62,11 +62,7 @@ namespace FactorioSave
         // Constructor - this runs when the form is created
         public MainForm()
         {
-
-
-            InitializeComponent();
-
-
+            _appSettings = ApplicationSettings.LoadSettings();
 
             _googleDriveService = new GoogleDriveService();
             _googleDriveService.InitializeAsync();
@@ -76,35 +72,29 @@ namespace FactorioSave
 
             // Subscribe to the FactorioClosed event
             _factorioMonitor.FactorioClosed += OnFactorioClosed;
-
+            _factorioMonitor.FactorioLaunched += OnFactorioLaunched;
             // Start monitoring for Factorio
             _factorioMonitor.StartMonitoring();
 
 
-            _appSettings = ApplicationSettings.LoadSettings();
 
 
-            bool isEmpty = string.IsNullOrEmpty(_sharingLink);
-            if (isEmpty)
-            {
-                txtFolderUrl.Text = "No sharing link available";
-                btnOpenLink.Enabled = false;
+            // Initialize sharing link
+            _sharingLink = _appSettings.LastSharedFolderLink;
 
-            }
-            else
-            {
-                btnOpenLink.Enabled = true;
-                txtFolderUrl.Text = _sharingLink;
-            }
+
+
 
             _sharingLink = _appSettings.LastSharedFolderLink;
-        
 
-            if (!string.IsNullOrEmpty(_appSettings.DriveTargetLocation))
+            // Set custom folder link if available
+            if (!string.IsNullOrEmpty(_appSettings.LastSharedFolderLink))
             {
-                lblDriveLocation.Text = $"Drive location: {_appSettings.DriveTargetLocation}";
-
+                _googleDriveService.SetCustomFolderLink(_appSettings.LastSharedFolderLink);
             }
+
+
+
 
             if (!string.IsNullOrEmpty(_appSettings.LastSharedFolderLink))
             {
@@ -116,6 +106,16 @@ namespace FactorioSave
             {
                 _googleDriveService.SetCustomFolderLink(_appSettings.LastSharedFolderLink);
             }
+
+
+
+            InitializeComponent();
+
+            InitializeSimplifiedView();
+
+
+
+            
 
 
             
@@ -131,23 +131,66 @@ namespace FactorioSave
             // Update game status initially
             UpdateGameStatusDisplay();
 
-            // Initialize last action display
+            // Initialize last action   
             UpdateTimeLabels();
 
-            initializeTimers();
+
+            UpdateSimplifiedView();
+
+            //ValidateCurrentFolderLink();
+
+            ToggleViewMode(true);
+
+
+            InitializeTimers();
 
 
 
             UpdateButtonStates();
 
-
+            InitializeDisplay();
 
 
 
 
         }
 
-        private void initializeTimers()
+        private void InitializeDisplay()
+        {
+            bool isEmpty = string.IsNullOrEmpty(_sharingLink);
+            if (isEmpty)
+            {
+                txtFolderUrl.Text = "No sharing link available";
+                btnOpenLink.Enabled = false;
+
+            }
+            else
+            {
+                btnOpenLink.Enabled = true;
+                txtFolderUrl.Text = _sharingLink;
+            }
+
+            chkAutoSync.Checked = _appSettings.OpenAction == SyncAction.Auto && _appSettings.CloseAction == SyncAction.Auto;
+
+            
+            txtFolderUrl.Text = string.IsNullOrEmpty(_sharingLink) ?
+                "No sharing link available" : _sharingLink;
+            btnOpenLink.Enabled = !string.IsNullOrEmpty(_sharingLink);
+
+            // Update Drive location label if available
+            if (!string.IsNullOrEmpty(_appSettings.DriveTargetLocation))
+            {
+                lblDriveLocation.Text = $"Drive location: {_appSettings.DriveTargetLocation}";
+            }
+
+            if (!string.IsNullOrEmpty(_appSettings.DriveTargetLocation))
+            {
+                lblDriveLocation.Text = $"Drive location: {_appSettings.DriveTargetLocation}";
+
+            }
+        }
+
+        private void InitializeTimers()
         {
             if (this.components == null)
             {
@@ -230,8 +273,12 @@ namespace FactorioSave
                     return;
                 }
 
+
+                lblSimpleStatus.Text = "Syncing...";
+                lblSimpleStatus.ForeColor = System.Drawing.Color.FromArgb(66, 139, 202); // Blue
+
                 // Check if the save file exists locally
-                string savePath = _factorioMonitor.GetFactorioSavesDirectory();
+                string savePath = _factorioMonitor.GetSavePath();
                 bool localExists = File.Exists(savePath);
 
                 // Check if we have a Drive location
@@ -245,6 +292,10 @@ namespace FactorioSave
                         "Drive Not Configured",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning);
+
+                    lblSimpleStatus.Text = "Drive not configured";
+                    lblSimpleStatus.ForeColor = System.Drawing.Color.FromArgb(217, 83, 79); // Red
+                            
                     return;
                 }
 
@@ -288,6 +339,8 @@ namespace FactorioSave
 
                 // Perform the sync
                 lblStatus.Text = $"Status: {(effectiveDirection == SyncDirection.Upload ? "Uploading" : "Downloading")}...";
+                lblSimpleStatus.Text = effectiveDirection == SyncDirection.Upload ? "Uploading..." : "Downloading...";
+
 
                 if (effectiveDirection == SyncDirection.Upload)
                 {
@@ -298,6 +351,8 @@ namespace FactorioSave
                             "File Not Found",
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Warning);
+                        lblSimpleStatus.Text = "Local file not found";
+                        lblSimpleStatus.ForeColor = System.Drawing.Color.FromArgb(217, 83, 79); // Red
                         return;
                     }
 
@@ -318,12 +373,16 @@ namespace FactorioSave
                         _lastDriveModifiedBy);
 
                     lblStatus.Text = "Status: Download successful!";
+                    lblSimpleStatus.Text = "Download successful!";
+                    lblSimpleStatus.ForeColor = System.Drawing.Color.FromArgb(92, 184, 92); // Green
                     await UpdateLastModifiedLocallyAsync();
                     UpdateLastLocalDisplay();
                 }
 
                 // Refresh the information display
                 UpdateSaveFileDisplay();
+                UpdateSimplifiedView();
+
             }
             catch (Exception ex)
             {
@@ -334,6 +393,8 @@ namespace FactorioSave
                     MessageBoxIcon.Error);
 
                 lblStatus.Text = "Status: Sync failed.";
+                lblSimpleStatus.Text = "Sync failed!";
+                lblSimpleStatus.ForeColor = System.Drawing.Color.FromArgb(217, 83, 79);
             }
         }
 
@@ -413,18 +474,22 @@ namespace FactorioSave
 
         private void StopButtonPulse(Button button)
         {
-            // If button is being pulsed, remove it and restore original color
-            if (_originalButtonColors.ContainsKey(button))
+            if (_originalButtonColors != null && _pulseTimer != null)
             {
-                button.BackColor = _originalButtonColors[button];
-                _originalButtonColors.Remove(button);
-            }
+                // If button is being pulsed, remove it and restore original color
+                if (_originalButtonColors.ContainsKey(button))
+                {
+                    button.BackColor = _originalButtonColors[button];
+                    _originalButtonColors.Remove(button);
+                }
 
-            // If no more buttons to pulse, stop the timer
-            if (_originalButtonColors.Count == 0 && _pulseTimer.Enabled)
-            {
-                _pulseTimer.Stop();
+                // If no more buttons to pulse, stop the timer
+                if (_originalButtonColors.Count == 0 && _pulseTimer.Enabled)
+                {
+                    _pulseTimer.Stop();
+                }
             }
+            
         }
 
 
@@ -605,8 +670,8 @@ namespace FactorioSave
                     // Allow for a small time difference (5 seconds) to account for precision differences
                     TimeSpan diff = _lastModifiedLocally - _lastModifiedDrive;
 
-                    _localNewerThanDrive = diff.TotalSeconds > 5;
-                    _driveNewerThanLocal = diff.TotalSeconds < -5;
+                    _localNewerThanDrive = diff.TotalSeconds > 10;
+                    _driveNewerThanLocal = diff.TotalSeconds < -10;
 
                     // Update button color based on comparison
                     UpdateSyncButtonAppearance();
@@ -618,31 +683,145 @@ namespace FactorioSave
             }
         }
 
-        // Update the Sync button appearance based on comparison results
+        /// <summary>
+        /// Updates the appearance of the sync button based on sync status
+        /// </summary>
         private void UpdateSyncButtonAppearance()
         {
             if (_localNewerThanDrive)
             {
                 // Local is newer - suggest upload
-                btnSync.BackColor = Color.FromArgb(92, 184, 92); // Green
-                btnSync.Text = "↑ Sync to Drive";
-                StartButtonPulse(btnSync);
+                btnLargeSync.BackColor = Color.FromArgb(92, 184, 92); // Green
+                btnLargeSync.Text = "↑ UPLOAD";
+                StartButtonPulse(btnLargeSync);
             }
             else if (_driveNewerThanLocal)
             {
                 // Drive is newer - suggest download
-                btnSync.BackColor = Color.FromArgb(66, 139, 202); // Blue
-                btnSync.Text = "↓ Sync from Drive";
-                StartButtonPulse(btnSync);
+                btnLargeSync.BackColor = Color.FromArgb(66, 139, 202); // Blue
+                btnLargeSync.Text = "↓ DOWNLOAD";
+                StartButtonPulse(btnLargeSync);
+            }
+            else if (!File.Exists(_factorioMonitor.GetSavePath()))
+            {
+                // Local file doesn't exist
+                btnLargeSync.BackColor = Color.FromArgb(66, 139, 202); // Blue
+                btnLargeSync.Text = "↓ DOWNLOAD";
+                StartButtonPulse(btnLargeSync);
             }
             else
             {
                 // Files appear to be in sync
-                btnSync.BackColor = Color.FromArgb(240, 173, 78); // Yellow/amber
-                btnSync.Text = "⟲ Sync";
-                StopButtonPulse(btnSync);
+                btnLargeSync.BackColor = Color.FromArgb(240, 173, 78); // Yellow/amber
+                btnLargeSync.Text = "⟲ SYNC";
+                StopButtonPulse(btnLargeSync);
             }
-        }   
+
+            // Update sync status text
+            if (_factorioMonitor.isRunning)
+            {
+                lblSimpleStatus.Text = "Factorio is running";
+                lblSimpleStatus.ForeColor = Color.DarkGreen;
+            }
+            else
+            {
+                lblSimpleStatus.Text = "Ready to sync";
+                lblSimpleStatus.ForeColor = Color.FromArgb(92, 184, 92);
+            }
+        }
+
+        /// <summary>
+        /// Toggles between simplified and detailed view modes
+        /// </summary>
+        private void ToggleViewMode(bool simplified)
+        {
+            _isSimplifiedMode = simplified;
+
+            // Toggle visibility of panels
+            panelSimplified.Visible = simplified;
+
+            // Toggle detailed panels
+            panelHeader.Visible = !simplified;
+            panelSaveInfo.Visible = !simplified;
+            panelSharing.Visible = !simplified;
+            panelGameStatus.Visible = !simplified;
+
+            // Note: keep the status bar visible in both modes
+
+            // Update button text
+            btnMoreDetails.Text = simplified ? "More Details ▼" : "Simplify View ▲";
+
+            // Adjust form size for each mode
+            if (simplified)
+            {
+                this.ClientSize = new Size(600, 450);
+            }
+            else
+            {
+                this.ClientSize = new Size(854, 641);
+            }
+
+            // Center the buttons in the simplified view
+            if (simplified)
+            {
+                btnLargeSync.Location = new Point((this.ClientSize.Width - btnLargeSync.Width) / 2, 120);
+                lblCurrentSaveSimple.Location = new Point((this.ClientSize.Width - lblCurrentSaveSimple.Width) / 2, 80);
+                lblSimpleStatus.Location = new Point((this.ClientSize.Width - lblSimpleStatus.Width) / 2, 330);
+                lblLastSyncSimple.Location = new Point((this.ClientSize.Width - lblLastSyncSimple.Width) / 2, 360);
+                btnWizard.Location = new Point(20, 340);
+                btnMoreDetails.Location = new Point(this.ClientSize.Width - 160, 340);
+            }
+        }
+
+        // Event handlers for the simplified view
+        private void btnLargeSync_Click(object sender, EventArgs e)
+        {
+            PerformSync(SyncDirection.Auto);
+            UpdateSimplifiedView();
+        }
+
+        private void btnWizard_Click(object sender, EventArgs e)
+        {
+            ShowSetupWizard();
+        }
+
+        private void btnMoreDetails_Click(object sender, EventArgs e)
+        {
+            ToggleViewMode(!_isSimplifiedMode);
+        }
+
+        private void chkAutoSync_CheckedChanged(object sender, EventArgs e)
+        {
+            _appSettings.OpenAction = chkAutoSync.Checked ? SyncAction.Auto : SyncAction.Prompt;
+            _appSettings.CloseAction = chkAutoSync.Checked ? SyncAction.Auto : SyncAction.Prompt;
+            _appSettings.SaveSettings();
+        }
+
+        /// <summary>
+        /// Shows the setup wizard to guide users through initial configuration
+        /// </summary>
+        private void ShowSetupWizard()
+        {
+            using (var wizard = new SetupWizard(_googleDriveService, _factorioMonitor))
+            {
+                if (wizard.ShowDialog() == DialogResult.OK)
+                {
+                    // Update UI after wizard completes
+                    UpdateSaveFileDisplay();
+                    UpdateButtonStates();
+                    UpdateSimplifiedView();
+
+                    // Show success message
+                    MessageBox.Show(
+                        "Setup complete! Your Factorio saves are now ready to sync.",
+                        "Setup Complete",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+            }
+        }
+
+
 
         // Update btnGenerateLink_Click method:
         private async void btnGenerateLink_Click(object sender, EventArgs e)
@@ -785,6 +964,7 @@ namespace FactorioSave
             Invoke(new Action(() => {
                 UpdateGameStatusDisplay();
                 UpdateGameTimeDisplay();
+                UpdateSimplifiedView();
 
                 switch (_appSettings.CloseAction)
                 {
@@ -809,6 +989,7 @@ namespace FactorioSave
             Invoke(new Action(() => {
                 UpdateGameStatusDisplay();
                 UpdateGameTimeDisplay();
+                UpdateSimplifiedView();
 
                 switch (_appSettings.OpenAction)
                 {
@@ -843,7 +1024,7 @@ namespace FactorioSave
             if (result == DialogResult.Yes)
             {
                 if (opened)
-                    _googleDriveService.DownloadSaveAsync(_factorioMonitor.SaveFileName, _factorioMonitor.GetFactorioSavesDirectory());
+                    _googleDriveService.DownloadSaveAsync(_factorioMonitor.SaveFileName, _factorioMonitor.GetSavePath());
                 else
                     UploadSaveToGoogleDrive();
             }
@@ -911,6 +1092,7 @@ namespace FactorioSave
 
         private async void UpdateSaveFileDisplay()
         {
+
             // Check if we have a save file selected
             if (string.IsNullOrEmpty(_factorioMonitor.SaveFileName) || _factorioMonitor.SaveFileName == "None")
             {
@@ -925,7 +1107,7 @@ namespace FactorioSave
             lblCurrentSave.Text = $"Current Save: {_factorioMonitor.SaveFileName}";
 
             // Get the full path to the save file
-            string savePath = _factorioMonitor.GetFactorioSavesDirectory();
+            string savePath = _factorioMonitor.GetSavePath();
             lblSavePath.Text = $"Save Path: {savePath}";
 
             // Check if the file exists locally and get its last modified time
@@ -949,7 +1131,7 @@ namespace FactorioSave
         {
             try
             {
-                if (File.Exists(_factorioMonitor.GetFactorioSavesDirectory()))
+                if (File.Exists(_factorioMonitor.GetSavePath()))
                 {
                     TimeSpan elapsed = DateTime.Now - _lastModifiedLocally;
                     lblLastModified.Text = $"Last Modified locally: {FactorioMonitor.FormatTime(elapsed)} / {_lastModifiedLocally.ToString("dd.MM.yyyy HH:MM:ss")}";
@@ -987,7 +1169,7 @@ namespace FactorioSave
                 }
 
                 // Check if the save file exists
-                string savePath = _factorioMonitor.GetFactorioSavesDirectory();
+                string savePath = _factorioMonitor.GetSavePath();
                 if (!File.Exists(savePath))
                 {
                     MessageBox.Show(
@@ -1031,7 +1213,7 @@ namespace FactorioSave
         //Downloads the save from drive using info from _factorioMonitor
         private async void downloadSaveFromDrive()
         {
-            await _googleDriveService.DownloadSaveAsync(_factorioMonitor.SaveFileName, _factorioMonitor.GetFactorioSavesDirectory());
+            await _googleDriveService.DownloadSaveAsync(_factorioMonitor.SaveFileName, _factorioMonitor.GetSavePath());
 
             // Record the download action
             RecordSyncAction("Download");
@@ -1076,8 +1258,43 @@ namespace FactorioSave
             }
         }
 
+        /// <summary>
+        /// Updates the simplified view with current information
+        /// </summary>
+        private void UpdateSimplifiedView()
+        {
+            // Update save file display
+            if (string.IsNullOrEmpty(_factorioMonitor.SaveFileName) || _factorioMonitor.SaveFileName == "None")
+            {
+                lblCurrentSaveSimple.Text = "No save selected";
+                btnLargeSync.Enabled = false;
+            }
+            else
+            {
+                lblCurrentSaveSimple.Text = _factorioMonitor.SaveFileName;
+                btnLargeSync.Enabled = true;
+            }
 
-        
+            // Update last sync info
+            if (_lastActionTime == DateTime.MinValue)
+            {
+                lblLastSyncSimple.Text = "No sync actions yet";
+            }
+            else
+            {
+                TimeSpan elapsed = DateTime.Now - _lastActionTime;
+                string timeText = FactorioMonitor.FormatTime(elapsed);
+                lblLastSyncSimple.Text = $"Last {_lastActionType}: {timeText}";
+            }
+
+            // Update sync button appearance based on comparison
+            UpdateSyncButtonAppearance();
+        }
+
+
+
+
+
 
         // Timer tick event handler to update game status
         private void On05SecondsTimer(object sender, EventArgs e)
@@ -1088,6 +1305,8 @@ namespace FactorioSave
             UpdateLastLocalDisplay();
             UpdateLastModifiedLocallyAsync();
             UpdateGameTimeDisplay();
+            UpdateSimplifiedView();
+
 
         }
 
@@ -1563,7 +1782,7 @@ namespace FactorioSave
 
         private async Task UpdateLastModifiedLocallyAsync()
         {
-            _lastModifiedLocally = File.GetLastWriteTime(_factorioMonitor.GetFactorioSavesDirectory());
+            _lastModifiedLocally = File.GetLastWriteTime(_factorioMonitor.GetSavePath());
         }
 
         // Timer tick handler to update the last action time display

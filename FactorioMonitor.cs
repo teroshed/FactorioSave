@@ -15,7 +15,7 @@ namespace FactorioSave
 
         // Event that fires when Factorio closes
         public event EventHandler FactorioClosed;
-        public event EventHandler FactorioOpened;
+        public event EventHandler FactorioLaunched;
 
 
         // Flag to indicate if monitoring is active
@@ -145,7 +145,7 @@ namespace FactorioSave
             SaveSessionData();
         }
 
-        
+
 
         /// <summary>
         /// Gets formatted text about the last game session
@@ -155,7 +155,7 @@ namespace FactorioSave
             if (!_sessionData.LastLaunchTime.HasValue)
                 return "No recorded game sessions";
 
-            
+
             string result = $"Last played: ";
 
 
@@ -194,9 +194,9 @@ namespace FactorioSave
             return $"Total play time: {FactorioMonitor.FormatTime(_sessionData.TotalPlayTime)}";
         }
 
- 
 
-        
+
+
 
         /// <summary>
         /// Helper method to format a TimeSpan as a human-readable duration
@@ -364,7 +364,7 @@ namespace FactorioSave
                 {
                     OnFactorioClosed();
                 }
-                if(!factorioWasRunning && _isRunning)
+                if (!factorioWasRunning && _isRunning)
                 {
                     OnFactorioOpened();
                 }
@@ -382,14 +382,14 @@ namespace FactorioSave
             this.RecordGameClose();
             FactorioClosed?.Invoke(this, EventArgs.Empty);
         }
-        
+
         private void OnFactorioOpened()
         {
             this.RecordGameLaunch();
-            FactorioOpened?.Invoke(this, EventArgs.Empty);
+            FactorioLaunched?.Invoke(this, EventArgs.Empty);
         }
 
-        public string GetFactorioSavesDirectory()
+        public string GetSavePath()
         {
             string savePath;
 
@@ -414,8 +414,33 @@ namespace FactorioSave
             return savePath;
         }
 
+        public static string GetFactorioSaveFolder()
+        {
+            string savePath;
 
+            switch (Environment.OSVersion.Platform)
+            {
+                case PlatformID.Win32NT:
+                    savePath = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                        "Factorio", "saves");
+                    break;
+
+                case PlatformID.Unix:
+                    savePath = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                        ".factorio", "saves");
+                    break;
+
+                default:
+                    throw new PlatformNotSupportedException("Your OS is not supported.");
+            }
+
+            return savePath;
+
+        }
     }
+
 
     public class Session
     {

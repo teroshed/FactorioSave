@@ -34,7 +34,8 @@ namespace FactorioSave
         private ComboBox selectDirection;
         private Label lblLinkAccessStatus;
         private Label lblLastPlayedDuration;
-
+        private Label lblStatusResult;
+        private Label lblSessionLength;
 
 
         private Label panelLastAction;
@@ -50,6 +51,22 @@ namespace FactorioSave
         private Button btnEditLink;
         private Button btnGenerateLink;
 
+
+        //Simplified UI 
+        private Panel panelSimplified;
+        private Button btnLargeSync;
+        private Button btnWizard;
+        private Button btnMoreDetails;
+        private Label lblSimpleStatus;
+        private Label lblCurrentSaveSimple;
+        private Label lblLastSyncSimple;
+        private Panel panelStatusBar;
+        private CheckBox chkAutoSync;
+
+
+
+        private bool _isSimplifiedMode = true;
+
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
@@ -62,6 +79,8 @@ namespace FactorioSave
             }
             base.Dispose(disposing);
         }
+
+
 
 
         /// <summary>
@@ -579,9 +598,128 @@ namespace FactorioSave
 
         }
 
-        private Label lblStatusResult;
-        private Label lblSessionLength;
+        
+        /// <summary>
+        /// Creates the simplified view components and initializes them
+        /// </summary>
+        private void InitializeSimplifiedView()
+        {
+            // Main panel for simplified view
+            panelSimplified = new Panel();
+            panelSimplified.Dock = DockStyle.Fill;
+            panelSimplified.BackColor = Color.WhiteSmoke;
+            panelSimplified.Padding = new Padding(20);
+
+            // Large sync button
+            btnLargeSync = new Button();
+            btnLargeSync.Size = new Size(300, 200);
+            btnLargeSync.Location = new Point((this.ClientSize.Width - 300) / 2, 120);
+            btnLargeSync.Text = "⟲ SYNC";
+            btnLargeSync.Font = new Font("Segoe UI", 36F, FontStyle.Bold);
+            btnLargeSync.FlatStyle = FlatStyle.Flat;
+            btnLargeSync.BackColor = Color.FromArgb(92, 184, 92); // Green
+            btnLargeSync.ForeColor = Color.White;
+            btnLargeSync.Cursor = Cursors.Hand;
+            btnLargeSync.Click += btnLargeSync_Click;
+
+            // Wizard button
+            btnWizard = new Button();
+            btnWizard.Size = new Size(140, 60);
+            btnWizard.Location = new Point(20, 340);
+            btnWizard.Text = "✨ Setup Wizard";
+            btnWizard.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            btnWizard.FlatStyle = FlatStyle.Flat;
+            btnWizard.BackColor = Color.FromArgb(66, 139, 202); // Blue
+            btnWizard.ForeColor = Color.White;
+            btnWizard.Cursor = Cursors.Hand;
+            btnWizard.Click += btnWizard_Click;
+
+            // More Details button
+            btnMoreDetails = new Button();
+            btnMoreDetails.Size = new Size(140, 60);
+            btnMoreDetails.Location = new Point(this.ClientSize.Width - 160, 340);
+            btnMoreDetails.Text = "More Details ▼";
+            btnMoreDetails.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            btnMoreDetails.FlatStyle = FlatStyle.Flat;
+            btnMoreDetails.BackColor = Color.FromArgb(120, 120, 120); // Gray
+            btnMoreDetails.ForeColor = Color.White;
+            btnMoreDetails.Cursor = Cursors.Hand;
+            btnMoreDetails.Click += btnMoreDetails_Click;
+
+            // Current save display
+            lblCurrentSaveSimple = new Label();
+            lblCurrentSaveSimple.AutoSize = false;
+            lblCurrentSaveSimple.Size = new Size(600, 30);
+            lblCurrentSaveSimple.Location = new Point((this.ClientSize.Width - 600) / 2, 80);
+            lblCurrentSaveSimple.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+            lblCurrentSaveSimple.ForeColor = Color.FromArgb(41, 50, 65);
+            lblCurrentSaveSimple.Text = "No save selected";
+            lblCurrentSaveSimple.TextAlign = ContentAlignment.MiddleCenter;
+
+            // Simple status display
+            lblSimpleStatus = new Label();
+            lblSimpleStatus.AutoSize = false;
+            lblSimpleStatus.Size = new Size(600, 30);
+            lblSimpleStatus.Location = new Point((this.ClientSize.Width - 600) / 2, 330);
+            lblSimpleStatus.Font = new Font("Segoe UI", 12F);
+            lblSimpleStatus.ForeColor = Color.FromArgb(92, 184, 92); // Green
+            lblSimpleStatus.Text = "Ready to sync";
+            lblSimpleStatus.TextAlign = ContentAlignment.MiddleCenter;
+
+            // Last sync information
+            lblLastSyncSimple = new Label();
+            lblLastSyncSimple.AutoSize = false;
+            lblLastSyncSimple.Size = new Size(500, 25);
+            lblLastSyncSimple.Location = new Point((this.ClientSize.Width - 500) / 2, 360);
+            lblLastSyncSimple.Font = new Font("Segoe UI", 10F);
+            lblLastSyncSimple.ForeColor = Color.FromArgb(80, 80, 80);
+            lblLastSyncSimple.Text = "No sync actions yet";
+            lblLastSyncSimple.TextAlign = ContentAlignment.MiddleCenter;
+
+            // Status bar panel at the bottom
+            panelStatusBar = new Panel();
+            panelStatusBar.Height = 40;
+            panelStatusBar.Dock = DockStyle.Bottom;
+            panelStatusBar.BackColor = Color.FromArgb(41, 50, 65);
+
+            // Auto-sync checkbox
+            chkAutoSync = new CheckBox();
+            chkAutoSync.Text = "Auto-sync when Factorio opens/closes";
+            chkAutoSync.AutoSize = true;
+            chkAutoSync.Font = new Font("Segoe UI", 9F);
+            chkAutoSync.ForeColor = Color.White;
+            chkAutoSync.Location = new Point(20, 10);
+            chkAutoSync.Checked = _appSettings.OpenAction == SyncAction.Auto && _appSettings.CloseAction == SyncAction.Auto;
+            chkAutoSync.CheckedChanged += chkAutoSync_CheckedChanged;
+
+            // Add all components
+            panelStatusBar.Controls.Add(chkAutoSync);
+
+            panelSimplified.Controls.Add(btnLargeSync);
+            panelSimplified.Controls.Add(btnWizard);
+            panelSimplified.Controls.Add(btnMoreDetails);
+            panelSimplified.Controls.Add(lblCurrentSaveSimple);
+            panelSimplified.Controls.Add(lblSimpleStatus);
+            panelSimplified.Controls.Add(lblLastSyncSimple);
+
+            // Add panels to the form
+            this.Controls.Add(panelSimplified);
+            this.Controls.Add(panelStatusBar);
+
+            // Apply rounded corners to buttons
+            ApplyRoundCorners(btnLargeSync, 20);
+            ApplyRoundCorners(btnWizard, 15);
+            ApplyRoundCorners(btnMoreDetails, 15);
+
+            // Initially hide the detailed panels
+            ToggleViewMode(true);
+
+            // Update display with current information
+            UpdateSimplifiedView();
+        }
     }
+
+
 
 
 }
