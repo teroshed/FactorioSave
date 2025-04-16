@@ -28,7 +28,7 @@ namespace FactorioSave
         public readonly FactorioMonitor _factorioMonitor;
         private ApplicationSettings _appSettings;
         private readonly GoogleDriveService _googleDriveService;
-
+        private SetupWizard _setupWizard; 
 
         private DateTime _lastActionTime = DateTime.MinValue;
         private DateTime _lastModifiedDrive = DateTime.MinValue;
@@ -199,6 +199,7 @@ namespace FactorioSave
             _pulseTimer = new System.Windows.Forms.Timer(this.components);
             _pulseTimer.Interval = 50; // 50ms for smooth animation
             _pulseTimer.Tick += OnPulseTimerTick;
+            _pulseTimer.Start();
 
             _timer05Seconds = new System.Windows.Forms.Timer(this.components);
             _timer05Seconds.Interval = 500;
@@ -474,20 +475,22 @@ namespace FactorioSave
 
         private void StopButtonPulse(Button button)
         {
-            if (_originalButtonColors != null && _pulseTimer != null)
-            {
-                // If button is being pulsed, remove it and restore original color
-                if (_originalButtonColors.ContainsKey(button))
-                {
-                    button.BackColor = _originalButtonColors[button];
-                    _originalButtonColors.Remove(button);
-                }
+            if (_originalButtonColors == null)
+                return;
+            if (_pulseTimer == null)
+                return;
 
-                // If no more buttons to pulse, stop the timer
-                if (_originalButtonColors.Count == 0 && _pulseTimer.Enabled)
-                {
-                    _pulseTimer.Stop();
-                }
+            // If button is being pulsed, remove it and restore original color
+            if (_originalButtonColors.ContainsKey(button))
+            {
+                button.BackColor = _originalButtonColors[button];
+                _originalButtonColors.Remove(button);
+            }
+
+            // If no more buttons to pulse, stop the timer
+            if (_originalButtonColors.Count == 0 && _pulseTimer.Enabled)
+            {
+                _pulseTimer.Stop();
             }
             
         }
@@ -802,22 +805,21 @@ namespace FactorioSave
         /// </summary>
         private void ShowSetupWizard()
         {
-            using (var wizard = new SetupWizard(_googleDriveService, _factorioMonitor))
-            {
-                if (wizard.ShowDialog() == DialogResult.OK)
-                {
-                    // Update UI after wizard completes
-                    UpdateSaveFileDisplay();
-                    UpdateButtonStates();
-                    UpdateSimplifiedView();
+            _setupWizard = new SetupWizard(_googleDriveService, _factorioMonitor);
 
-                    // Show success message
-                    MessageBox.Show(
-                        "Setup complete! Your Factorio saves are now ready to sync.",
-                        "Setup Complete",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
-                }
+            if (_setupWizard.ShowDialog() == DialogResult.OK)
+            {
+                // Update UI after wizard completes
+                UpdateSaveFileDisplay();
+                UpdateButtonStates();
+                UpdateSimplifiedView();
+
+                // Show success message
+                MessageBox.Show(
+                    "Setup complete! Your Factorio saves are now ready to sync.",
+                    "Setup Complete",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
             }
         }
 
@@ -1306,6 +1308,15 @@ namespace FactorioSave
             UpdateLastModifiedLocallyAsync();
             UpdateGameTimeDisplay();
             UpdateSimplifiedView();
+
+
+            if (_setupWizard != null && _setupWizard.CurrentStep == 2)
+            {
+                System.Diagnostics.Debug.WriteLine($"current step: {_setupWizard.CurrentStep}");
+
+                _setupWizard.CheckClipboardForDriveLink();
+                System.Diagnostics.Debug.WriteLine("Checking clipboard");
+            }
 
 
         }

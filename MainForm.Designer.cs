@@ -116,13 +116,13 @@ namespace FactorioSave
             this.txtFolderUrl = new System.Windows.Forms.TextBox();
             this.lblLinkAccessStatus = new System.Windows.Forms.Label();
             this.panelGameStatus = new System.Windows.Forms.Panel();
+            this.lblSessionLength = new System.Windows.Forms.Label();
             this.lblStatusResult = new System.Windows.Forms.Label();
             this.lblGameStatus = new System.Windows.Forms.Label();
             this.lblStatus = new System.Windows.Forms.Label();
             this.panelLastAction = new System.Windows.Forms.Label();
             this.lblLastAction = new System.Windows.Forms.Label();
             this.selectDirection = new System.Windows.Forms.ComboBox();
-            this.lblSessionLength = new System.Windows.Forms.Label();
             this.panelHeader.SuspendLayout();
             this.panelSaveInfo.SuspendLayout();
             this.panelSharing.SuspendLayout();
@@ -296,9 +296,9 @@ namespace FactorioSave
             this.btnSelectSaveFile.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnSelectSaveFile.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold);
             this.btnSelectSaveFile.ForeColor = System.Drawing.Color.White;
-            this.btnSelectSaveFile.Location = new System.Drawing.Point(214, 137);
+            this.btnSelectSaveFile.Location = new System.Drawing.Point(187, 132);
             this.btnSelectSaveFile.Name = "btnSelectSaveFile";
-            this.btnSelectSaveFile.Size = new System.Drawing.Size(170, 40);
+            this.btnSelectSaveFile.Size = new System.Drawing.Size(169, 39);
             this.btnSelectSaveFile.TabIndex = 2;
             this.btnSelectSaveFile.Text = "Select Save File";
             this.btnSelectSaveFile.UseVisualStyleBackColor = false;
@@ -306,12 +306,12 @@ namespace FactorioSave
             // 
             // btnSearchSave
             // 
-            this.btnSearchSave.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(240)))), ((int)(((byte)(173)))), ((int)(((byte)(78)))));
+            this.btnSearchSave.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(66)))), ((int)(((byte)(139)))), ((int)(((byte)(202)))));
             this.btnSearchSave.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnSearchSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnSearchSave.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Bold);
             this.btnSearchSave.ForeColor = System.Drawing.Color.White;
-            this.btnSearchSave.Location = new System.Drawing.Point(10, 137);
+            this.btnSearchSave.Location = new System.Drawing.Point(11, 132);
             this.btnSearchSave.Name = "btnSearchSave";
             this.btnSearchSave.Size = new System.Drawing.Size(170, 40);
             this.btnSearchSave.TabIndex = 3;
@@ -337,15 +337,15 @@ namespace FactorioSave
             // 
             this.panelSharing.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(245)))), ((int)(((byte)(245)))));
             this.panelSharing.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.panelSharing.Controls.Add(this.btnSync);
-            this.panelSharing.Controls.Add(this.btnOpenLink);
-            this.panelSharing.Controls.Add(this.lblSharingTitle);
-            this.panelSharing.Controls.Add(this.btnCopyLink);
-            this.panelSharing.Controls.Add(this.btnSelectSaveFile);
-            this.panelSharing.Controls.Add(this.btnSearchSave);
-            this.panelSharing.Controls.Add(this.btnEditLink);
             this.panelSharing.Controls.Add(this.btnGenerateLink);
+            this.panelSharing.Controls.Add(this.btnSync);
+            this.panelSharing.Controls.Add(this.btnCopyLink);
+            this.panelSharing.Controls.Add(this.btnOpenLink);
+            this.panelSharing.Controls.Add(this.btnSelectSaveFile);
+            this.panelSharing.Controls.Add(this.lblSharingTitle);
+            this.panelSharing.Controls.Add(this.btnEditLink);
             this.panelSharing.Controls.Add(this.txtFolderUrl);
+            this.panelSharing.Controls.Add(this.btnSearchSave);
             this.panelSharing.Controls.Add(this.lblLinkAccessStatus);
             this.panelSharing.Location = new System.Drawing.Point(20, 366);
             this.panelSharing.Name = "panelSharing";
@@ -354,7 +354,7 @@ namespace FactorioSave
             // 
             // btnSync
             // 
-            this.btnSync.BackColor = System.Drawing.Color.LimeGreen;
+            this.btnSync.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(105)))), ((int)(((byte)(87)))));
             this.btnSync.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnSync.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnSync.Font = new System.Drawing.Font("Segoe UI", 14F, System.Drawing.FontStyle.Bold);
@@ -375,7 +375,7 @@ namespace FactorioSave
             this.btnOpenLink.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnOpenLink.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.btnOpenLink.ForeColor = System.Drawing.Color.White;
-            this.btnOpenLink.Location = new System.Drawing.Point(135, 98);
+            this.btnOpenLink.Location = new System.Drawing.Point(171, 76);
             this.btnOpenLink.Name = "btnOpenLink";
             this.btnOpenLink.Size = new System.Drawing.Size(105, 33);
             this.btnOpenLink.TabIndex = 6;
@@ -402,7 +402,7 @@ namespace FactorioSave
             this.btnCopyLink.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnCopyLink.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.btnCopyLink.ForeColor = System.Drawing.Color.Black;
-            this.btnCopyLink.Location = new System.Drawing.Point(11, 98);
+            this.btnCopyLink.Location = new System.Drawing.Point(199, 3);
             this.btnCopyLink.Name = "btnCopyLink";
             this.btnCopyLink.Size = new System.Drawing.Size(105, 30);
             this.btnCopyLink.TabIndex = 2;
@@ -417,13 +417,12 @@ namespace FactorioSave
             this.btnEditLink.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnEditLink.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
             this.btnEditLink.ForeColor = System.Drawing.Color.White;
-            this.btnEditLink.Location = new System.Drawing.Point(259, 95);
+            this.btnEditLink.Location = new System.Drawing.Point(362, 129);
             this.btnEditLink.Name = "btnEditLink";
-            this.btnEditLink.Size = new System.Drawing.Size(125, 33);
+            this.btnEditLink.Size = new System.Drawing.Size(168, 42);
             this.btnEditLink.TabIndex = 3;
             this.btnEditLink.Text = "Edit Link";
             this.btnEditLink.UseVisualStyleBackColor = false;
-            this.btnEditLink.Visible = false;
             this.btnEditLink.Click += new System.EventHandler(this.btnEditLink_Click);
             // 
             // btnGenerateLink
@@ -433,9 +432,9 @@ namespace FactorioSave
             this.btnGenerateLink.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnGenerateLink.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.btnGenerateLink.ForeColor = System.Drawing.Color.White;
-            this.btnGenerateLink.Location = new System.Drawing.Point(427, 101);
+            this.btnGenerateLink.Location = new System.Drawing.Point(650, 34);
             this.btnGenerateLink.Name = "btnGenerateLink";
-            this.btnGenerateLink.Size = new System.Drawing.Size(120, 30);
+            this.btnGenerateLink.Size = new System.Drawing.Size(132, 36);
             this.btnGenerateLink.TabIndex = 4;
             this.btnGenerateLink.Text = "Generate Link";
             this.btnGenerateLink.UseVisualStyleBackColor = false;
@@ -480,6 +479,18 @@ namespace FactorioSave
             this.panelGameStatus.Size = new System.Drawing.Size(325, 70);
             this.panelGameStatus.TabIndex = 7;
             this.panelGameStatus.Paint += new System.Windows.Forms.PaintEventHandler(this.panelGameStatus_Paint);
+            // 
+            // lblSessionLength
+            // 
+            this.lblSessionLength.AutoSize = true;
+            this.lblSessionLength.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
+            this.lblSessionLength.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
+            this.lblSessionLength.Location = new System.Drawing.Point(12, 30);
+            this.lblSessionLength.Name = "lblSessionLength";
+            this.lblSessionLength.Size = new System.Drawing.Size(136, 23);
+            this.lblSessionLength.TabIndex = 11;
+            this.lblSessionLength.Text = "Current session:";
+            this.lblSessionLength.Visible = false;
             // 
             // lblStatusResult
             // 
@@ -552,18 +563,6 @@ namespace FactorioSave
             this.selectDirection.Size = new System.Drawing.Size(194, 28);
             this.selectDirection.TabIndex = 12;
             this.selectDirection.Click += new System.EventHandler(this.btnSelectSync_Click);
-            // 
-            // lblSessionLength
-            // 
-            this.lblSessionLength.AutoSize = true;
-            this.lblSessionLength.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
-            this.lblSessionLength.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(80)))), ((int)(((byte)(80)))));
-            this.lblSessionLength.Location = new System.Drawing.Point(12, 30);
-            this.lblSessionLength.Name = "lblSessionLength";
-            this.lblSessionLength.Size = new System.Drawing.Size(136, 23);
-            this.lblSessionLength.TabIndex = 11;
-            this.lblSessionLength.Text = "Current session:";
-            this.lblSessionLength.Visible = false;
             // 
             // MainForm
             // 
