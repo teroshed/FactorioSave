@@ -158,6 +158,7 @@ namespace FactorioSave
             this.CancelButton = btnCancel;
 
             InitializeWelcomeStep();
+           
         }
 
         private void InitializeWelcomeStep()
