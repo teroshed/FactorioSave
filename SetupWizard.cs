@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -18,8 +19,15 @@ namespace FactorioSave
         private readonly GoogleDriveService _googleDriveService;
         private readonly FactorioMonitor _factorioMonitor;
 
+
+
+        
         private System.Windows.Forms.Timer _timer05Seconds;
 
+
+        private CancellationTokenSource _cancellationToken;
+        public event EventHandler ClipboardChanged;
+        private bool _isMonitoring = false;
 
         public int CurrentStep = 0;
 
@@ -34,6 +42,8 @@ namespace FactorioSave
         private SyncDirection preferredDirection = SyncDirection.Auto;
 
         private Font _buttonFont;
+        private string _lastCheckedLink = string.Empty;
+
         
 
         public SetupWizard(GoogleDriveService googleDriveService, FactorioMonitor factorioMonitor)
@@ -42,14 +52,109 @@ namespace FactorioSave
             _factorioMonitor = factorioMonitor;
             _buttonFont = new Font("Segoe UI", 12);
             _buttonFont = new Font(_buttonFont, FontStyle.Bold);
-            
+
+
+
+
             InitializeComponent();
             InitializeWizardSteps();
 
 
             InitializeTimers();
 
+            StartMonitoringClipboard();
+
+
+        }
+
+        private void StartMonitoringClipboard()
+        {
+            if (_isMonitoring)
+                return;
+
+            _isMonitoring = true;
+
+
+            _cancellationToken = new CancellationTokenSource();
+
+            Task.Run(() => MonitorClipboard(_cancellationToken.Token));
+
+
+
+        }
+
+
+        private async Task MonitorClipboard(CancellationToken cancellationToken)
+        {
+            string previousClipboardText = "";
+
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"Getting clipboard ? {GetClipboardAsync()}");
+
+            }
+            catch (Exception e)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting clipboard {e}");
+
+            }
+            string clipboardValueWas = await GetClipboardAsync();
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                //System.Diagnostics.Debug.WriteLine($"Clipboard was {clipboardValueWas}, is: {Clipboard.GetText()}");
+
+                if (await GetClipboardAsync() != clipboardValueWas)
+                {
+                    OnClipboardChange();
+                    System.Diagnostics.Debug.WriteLine("Clipboard changed :)");
+                }
+                clipboardValueWas = await GetClipboardAsync();
+                await Task.Delay(500, cancellationToken).ConfigureAwait(false);
+
+            }
+        }
+
+        private async Task<string> GetClipboardAsync()
+        {
+            try 
+            {
+                string clipboardValue = "";
+                await Task.Run(() =>
+                {
+                    try
+                    {
+                        this.Invoke((MethodInvoker)delegate
+                        {
+                            clipboardValue = Clipboard.GetText();
+                        });
+                    }
+                    catch (Exception e)
+                    {
+                        
+
+                    }
+                });
+                return clipboardValue;
+            }
+            catch (Exception e)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error getting clipboard {e}");
+                return string.Empty;
+            }
             
+        }
+
+
+
+        private void OnClipboardChange()
+        {
+            Invoke(new Action(() => {
+                if(CurrentStep == 2)
+                {
+                    CheckClipboardForDriveLink();
+                }
+            }));
         }
 
         private async void InitializeTimers()
@@ -67,7 +172,6 @@ namespace FactorioSave
 
         private void On05SecondsTimer(object sender, EventArgs e)
         {
-
         }
 
 
@@ -295,8 +399,7 @@ namespace FactorioSave
                     System.Diagnostics.Debug.WriteLine("Drive folder in clipboard");
                     txtFolderLink.Text = copiedText;
 
-                    if(validate)
-                        ValidateLink();
+                    ValidateLink();
 
 
 
@@ -501,17 +604,27 @@ namespace FactorioSave
 
         private async void ValidateLink()
         {
+            
             try
             {
-                if (string.IsNullOrWhiteSpace(txtFolderLink.Text))
+                string text = txtFolderLink.Text;
+                if(_lastCheckedLink == text)
+                {
+                    
+                    return;
+                }
+                _lastCheckedLink = text;
+
+                if (string.IsNullOrWhiteSpace(text))
                 {
                     lblLinkStatus.Text = "Please enter a folder link or ID";
                     lblLinkStatus.ForeColor = Color.Red;
                     return;
                 }
 
+
                 // Extract folder ID
-                string folderId = _googleDriveService.ExtractFolderIdFromLink(txtFolderLink.Text);
+                string folderId = _googleDriveService.ExtractFolderIdFromLink(text);
                 if (string.IsNullOrEmpty(folderId))
                 {
                     lblLinkStatus.Text = "Invalid folder link format";

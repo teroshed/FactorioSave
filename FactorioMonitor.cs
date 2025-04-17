@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 using Newtonsoft.Json;
+using System.Windows.Forms;
 
 namespace FactorioSave
 {
@@ -16,6 +17,7 @@ namespace FactorioSave
         // Event that fires when Factorio closes
         public event EventHandler FactorioClosed;
         public event EventHandler FactorioLaunched;
+        public event EventHandler ClipboardChanged;
 
 
         // Flag to indicate if monitoring is active
@@ -332,6 +334,7 @@ namespace FactorioSave
             _cancellationTokenSource = new CancellationTokenSource();
 
             Task.Run(() => MonitorFactorioProcess(_cancellationTokenSource.Token));
+
         }
 
         // Stop monitoring
@@ -350,9 +353,12 @@ namespace FactorioSave
             return Process.GetProcessesByName(FACTORIO_PROCESS_NAME).Length > 0;
         }
 
+
+        
         // The main monitoring loop that runs on a background thread
         private async Task MonitorFactorioProcess(CancellationToken cancellationToken)
         {
+
             bool factorioWasRunning = IsFactorioRunning();
 
             while (!cancellationToken.IsCancellationRequested)
@@ -372,11 +378,11 @@ namespace FactorioSave
                 factorioWasRunning = _isRunning;
 
                 // Wait a bit before checking again
-                await Task.Delay(2000, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(500, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        // Method to raise the FactorioClosed event
+        
         private void OnFactorioClosed()
         {
             this.RecordGameClose();
@@ -387,6 +393,11 @@ namespace FactorioSave
         {
             this.RecordGameLaunch();
             FactorioLaunched?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void OnClipboardChange()
+        {
+            ClipboardChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public string GetSavePath()

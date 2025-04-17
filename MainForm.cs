@@ -73,6 +73,7 @@ namespace FactorioSave
             // Subscribe to the FactorioClosed event
             _factorioMonitor.FactorioClosed += OnFactorioClosed;
             _factorioMonitor.FactorioLaunched += OnFactorioLaunched;
+            
             // Start monitoring for Factorio
             _factorioMonitor.StartMonitoring();
 
@@ -1310,13 +1311,7 @@ namespace FactorioSave
             UpdateSimplifiedView();
 
 
-            if (_setupWizard != null && _setupWizard.CurrentStep == 2)
-            {
-                System.Diagnostics.Debug.WriteLine($"current step: {_setupWizard.CurrentStep}");
-
-                _setupWizard.CheckClipboardForDriveLink();
-                System.Diagnostics.Debug.WriteLine("Checking clipboard");
-            }
+         
 
 
         }
