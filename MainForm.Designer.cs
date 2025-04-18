@@ -319,6 +319,7 @@ namespace FactorioSave
             this.btnSearchSave.Text = "Search on Drive";
             this.btnSearchSave.UseVisualStyleBackColor = false;
             this.btnSearchSave.Click += new System.EventHandler(this.btnSearchSave_Click);
+
             // 
             // btnUploadToDrive
             // 
@@ -326,6 +327,7 @@ namespace FactorioSave
             this.btnUploadToDrive.Name = "btnUploadToDrive";
             this.btnUploadToDrive.Size = new System.Drawing.Size(75, 23);
             this.btnUploadToDrive.TabIndex = 4;
+            this.btnUploadToDrive.Visible = false;
             // 
             // btnDownloadFromDrive
             // 
@@ -333,6 +335,8 @@ namespace FactorioSave
             this.btnDownloadFromDrive.Name = "btnDownloadFromDrive";
             this.btnDownloadFromDrive.Size = new System.Drawing.Size(75, 23);
             this.btnDownloadFromDrive.TabIndex = 5;
+            this.btnDownloadFromDrive.Visible = false;
+
             // 
             // panelSharing
             // 

@@ -113,9 +113,6 @@ namespace FactorioSave
             InitializeComponent();
 
             InitializeSimplifiedView();
-
-
-
             
 
 
@@ -748,6 +745,17 @@ namespace FactorioSave
             lblLastAction.Visible = !simplified;
             selectDirection.Visible = !simplified;
             
+            // Hide the upload/download buttons in simplified mode
+            btnUploadToDrive.Visible = !simplified;
+            btnDownloadFromDrive.Visible = !simplified;
+            btnCopyLink.Visible = !simplified;
+            btnEditLink.Visible = !simplified;
+            btnGenerateLink.Visible = !simplified;
+            btnSelectSaveFile.Visible = !simplified;
+            btnSettings.Visible = !simplified;
+            btnSearchSave.Visible = !simplified;
+            
+            
             // Toggle visibility of simplified view
             panelSimplified.Visible = simplified;
             
@@ -762,7 +770,7 @@ namespace FactorioSave
                 btnMoreDetails.Text = "Less Details ▲";
                 this.Height = 680; // Larger height for detailed view
             }
-            
+
             // Update simplified view with current data if showing it
             if (simplified)
             {
