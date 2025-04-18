@@ -262,8 +262,15 @@ namespace FactorioSave
             LoadSaveFiles();
         }
 
-        private void InitializeDriveSetupStep()
+        private async void InitializeDriveSetupStep()
         {
+            //Check if the user is logged in to Google Drive
+            if (!await _googleDriveService.IsLoggedIn())
+            {
+                MessageBox.Show("You must be logged in to Google Drive to continue.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             panelDriveSetup = new Panel();
             panelDriveSetup.Dock = DockStyle.Fill;
             panelDriveSetup.Padding = new Padding(20, 80, 20, 20);

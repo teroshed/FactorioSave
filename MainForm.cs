@@ -740,42 +740,75 @@ namespace FactorioSave
         private void ToggleViewMode(bool simplified)
         {
             _isSimplifiedMode = simplified;
-
-            // Toggle visibility of panels
-            panelSimplified.Visible = simplified;
-
-            // Toggle detailed panels
-            panelHeader.Visible = !simplified;
+            
+            // Toggle visibility of all detailed view panels
             panelSaveInfo.Visible = !simplified;
             panelSharing.Visible = !simplified;
             panelGameStatus.Visible = !simplified;
-
-            // Note: keep the status bar visible in both modes
-
-            // Update button text
-            btnMoreDetails.Text = simplified ? "More Details ▼" : "Simplify View ▲";
-
-            // Adjust form size for each mode
+            lblLastAction.Visible = !simplified;
+            selectDirection.Visible = !simplified;
+            
+            // Toggle visibility of simplified view
+            panelSimplified.Visible = simplified;
+            
+            // Update button text based on current mode
             if (simplified)
             {
-                this.ClientSize = new Size(600, 450);
+                btnMoreDetails.Text = "More Details ▼";
+                this.Height = 480; // Smaller height for simplified view
             }
             else
             {
-                this.ClientSize = new Size(854, 641);
+                btnMoreDetails.Text = "Less Details ▲";
+                this.Height = 680; // Larger height for detailed view
             }
-
-            // Center the buttons in the simplified view
+            
+            // Update simplified view with current data if showing it
             if (simplified)
             {
-                btnLargeSync.Location = new Point((this.ClientSize.Width - btnLargeSync.Width) / 2, 120);
-                lblCurrentSaveSimple.Location = new Point((this.ClientSize.Width - lblCurrentSaveSimple.Width) / 2, 80);
-                lblSimpleStatus.Location = new Point((this.ClientSize.Width - lblSimpleStatus.Width) / 2, 330);
-                lblLastSyncSimple.Location = new Point((this.ClientSize.Width - lblLastSyncSimple.Width) / 2, 360);
-                btnWizard.Location = new Point(20, 340);
-                btnMoreDetails.Location = new Point(this.ClientSize.Width - 160, 340);
+                UpdateSimplifiedView();
             }
         }
+
+        // private void ToggleViewMode(bool simplified)
+        // {
+        //     _isSimplifiedMode = simplified;
+
+        //     // Toggle visibility of panels
+        //     panelSimplified.Visible = simplified;
+
+        //     // Toggle detailed panels
+        //     panelHeader.Visible = !simplified;
+        //     panelSaveInfo.Visible = !simplified;
+        //     panelSharing.Visible = !simplified;
+        //     panelGameStatus.Visible = !simplified;
+
+        //     // Note: keep the status bar visible in both modes
+
+        //     // Update button text
+        //     btnMoreDetails.Text = simplified ? "More Details ▼" : "Simplify View ▲";
+
+        //     // Adjust form size for each mode
+        //     if (simplified)
+        //     {
+        //         this.ClientSize = new Size(600, 450);
+        //     }
+        //     else
+        //     {
+        //         this.ClientSize = new Size(854, 641);
+        //     }
+
+        //     // Center the buttons in the simplified view
+        //     if (simplified)
+        //     {
+        //         btnLargeSync.Location = new Point((this.ClientSize.Width - btnLargeSync.Width) / 2, 120);
+        //         lblCurrentSaveSimple.Location = new Point((this.ClientSize.Width - lblCurrentSaveSimple.Width) / 2, 80);
+        //         lblSimpleStatus.Location = new Point((this.ClientSize.Width - lblSimpleStatus.Width) / 2, 330);
+        //         lblLastSyncSimple.Location = new Point((this.ClientSize.Width - lblLastSyncSimple.Width) / 2, 360);
+        //         btnWizard.Location = new Point(20, 340);
+        //         btnMoreDetails.Location = new Point(this.ClientSize.Width - 160, 340);
+        //     }
+        // }
 
         // Event handlers for the simplified view
         private void btnLargeSync_Click(object sender, EventArgs e)
@@ -1266,32 +1299,42 @@ namespace FactorioSave
         /// </summary>
         private void UpdateSimplifiedView()
         {
-            // Update save file display
-            if (string.IsNullOrEmpty(_factorioMonitor.SaveFileName) || _factorioMonitor.SaveFileName == "None")
+            // Update simplified view with current data
+            if (_factorioMonitor.SaveFileName != null )
+            {
+                lblCurrentSaveSimple.Text = _factorioMonitor.SaveFileName;
+            }
+            else
             {
                 lblCurrentSaveSimple.Text = "No save selected";
+            }
+            
+            // Update sync status display
+            if (_factorioMonitor.isRunning)
+            {
+                lblSimpleStatus.Text = "Factorio is running";
+                lblSimpleStatus.ForeColor = Color.FromArgb(217, 83, 79); // Red
                 btnLargeSync.Enabled = false;
             }
             else
             {
-                lblCurrentSaveSimple.Text = _factorioMonitor.SaveFileName;
+                lblSimpleStatus.Text = "Ready to sync";
+                lblSimpleStatus.ForeColor = Color.FromArgb(92, 184, 92); // Green
                 btnLargeSync.Enabled = true;
             }
-
-            // Update last sync info
-            if (_lastActionTime == DateTime.MinValue)
-            {
-                lblLastSyncSimple.Text = "No sync actions yet";
-            }
-            else
-            {
-                TimeSpan elapsed = DateTime.Now - _lastActionTime;
-                string timeText = FactorioMonitor.FormatTime(elapsed);
-                lblLastSyncSimple.Text = $"Last {_lastActionType}: {timeText}";
-            }
-
-            // Update sync button appearance based on comparison
-            UpdateSyncButtonAppearance();
+            
+            // // Update last sync info
+            // if (_googleDriveService. != null)
+            // {
+            //     lblLastSyncSimple.Text = $"Last sync: {_googleDriveService.LastSyncEvent.Action} at {_googleDriveService.LastSyncEvent.Time.ToString("g")}";
+            // }
+            // else
+            // {
+            //     lblLastSyncSimple.Text = "No sync actions yet";
+            // }
+            
+            // Update auto-sync checkbox
+            chkAutoSync.Checked = _appSettings.OpenAction == SyncAction.Auto && _appSettings.CloseAction == SyncAction.Auto;
         }
 
 

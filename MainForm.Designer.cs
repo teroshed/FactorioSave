@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 using System.Drawing;
+using System.Threading.Tasks;
 
 namespace FactorioSave
 {
@@ -596,9 +597,28 @@ namespace FactorioSave
             this.PerformLayout();
 
 
+            Task.Run(async () =>
+            {
+                TogglePanels(false);
+            });
+
 
 
         }
+        
+
+        /// <summary>
+        /// Sets the value of Visible of all panels to the value of the parameter
+        /// </summary> 
+        public void TogglePanels(bool visible)
+        {
+            this.panelHeader.Visible = visible;
+            this.panelSaveInfo.Visible = visible;
+            this.panelSharing.Visible = visible;
+            this.panelGameStatus.Visible = visible;
+            this.panelLastAction.Visible = visible;
+        }
+        
 
         
         /// <summary>

@@ -52,14 +52,47 @@ namespace FactorioSave
 
         // The ID of the Factorio saves folder in Google Drive
         private string _factorioFolderId;
+        public DateTime LastSyncEvent;
 
-        
+
         // Constructor
         public GoogleDriveService()
         {
             _driveService = null;
             _factorioFolderId = null;
-            _credential = null;   
+            _credential = null;
+            LastSyncEvent = DateTime.MinValue;
+   
+        }
+
+
+        /// <summary>   
+        /// Checks if the user has granted access to the Google Drive API   
+        /// </summary>
+        public async Task<bool> IsLoggedIn()
+        {
+            try
+            {
+                // Ensure the service is initialized
+                if (_driveService == null)
+                {   
+                    if (!await InitializeAsync())
+                        return false;
+                }
+
+                // Check if we can access the Drive API
+                var request = _driveService.Files.List();
+                request.Fields = "files(id, name)";
+                var result = await request.ExecuteAsync();
+
+                // If we get a result, we have access
+                return result.Files != null && result.Files.Count > 0;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error checking access: {ex.Message}");
+                return false;
+            }
         }
 
         
@@ -224,7 +257,7 @@ namespace FactorioSave
                 // Ensure the service is initialized
                 if (_driveService == null)
                 {
-                    if (!await InitializeAsync())
+                    if (!await IsLoggedIn())
                         return null;
                 }
 
@@ -283,7 +316,7 @@ namespace FactorioSave
                 using (var stream = new FileStream(credentialsPath, FileMode.Open, FileAccess.Read))
                 {
                     _credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-                        GoogleClientSecrets.Load(stream).Secrets,
+                        GoogleClientSecrets.FromStream(stream).Secrets,
                         scopes,
                         "user", CancellationToken.None, new FileDataStore(tokenFolderPath, true));
                 }
@@ -542,7 +575,6 @@ namespace FactorioSave
 
                 string existingFileId;
 
-                int counter = 0;
                 // Check if a file with this name already exists
                 
                 existingFileId = await FindFileIdByNameAsync(fileName);
