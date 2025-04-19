@@ -92,3 +92,4 @@ _ReSharper*/
 
 # Application specific
 FactorioSave.exe.config
+obj/Debug/FactorioSave.csproj.AssemblyReference.cache
