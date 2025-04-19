@@ -64,9 +64,9 @@ namespace FactorioSave
         {
             _appSettings = ApplicationSettings.LoadSettings();
 
+            // Initialize Google Drive service without requesting login immediately
             _googleDriveService = new GoogleDriveService();
-            _googleDriveService.InitializeAsync();
-
+            
             // Create our Factorio monitor
             _factorioMonitor = new FactorioMonitor();
 
@@ -77,51 +77,17 @@ namespace FactorioSave
             // Start monitoring for Factorio
             _factorioMonitor.StartMonitoring();
 
-
-
-
             // Initialize sharing link
             _sharingLink = _appSettings.LastSharedFolderLink;
 
-
-
-
-            _sharingLink = _appSettings.LastSharedFolderLink;
-
-            // Set custom folder link if available
+            // Only set custom folder link if available, but don't initialize the service
             if (!string.IsNullOrEmpty(_appSettings.LastSharedFolderLink))
             {
                 _googleDriveService.SetCustomFolderLink(_appSettings.LastSharedFolderLink);
             }
-
-
-
-
-            if (!string.IsNullOrEmpty(_appSettings.LastSharedFolderLink))
-            {
-                _googleDriveService.SetCustomFolderLink(_appSettings.LastSharedFolderLink);
-            }
-
-
-            if (!string.IsNullOrEmpty(_appSettings.LastSharedFolderLink))
-            {
-                _googleDriveService.SetCustomFolderLink(_appSettings.LastSharedFolderLink);
-            }
-
-
 
             InitializeComponent();
-
             InitializeSimplifiedView();
-            
-
-
-            
-
-
-
-            
-
 
             // Update the UI with the current save file name
             UpdateSaveFileDisplay();
@@ -132,25 +98,12 @@ namespace FactorioSave
             // Initialize last action   
             UpdateTimeLabels();
 
-
             UpdateSimplifiedView();
 
-            //ValidateCurrentFolderLink();
-
             ToggleViewMode(true);
-
-
+            
             InitializeTimers();
-
-
-
             UpdateButtonStates();
-
-            InitializeDisplay();
-
-
-
-
         }
 
         private void InitializeDisplay()

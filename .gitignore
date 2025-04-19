@@ -92,3 +92,9 @@ _ReSharper*/
 
 # Application specific
 FactorioSave.exe.config
+.vs/slnx.sqlite
+.vs/FactorioSave/v17/.suo
+bin/Debug/FactorioSave.exe
+bin/Debug/FactorioSave.pdb
+obj/Debug/FactorioSave.exe
+obj/Debug/FactorioSave.pdb

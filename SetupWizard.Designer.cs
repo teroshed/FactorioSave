@@ -265,7 +265,7 @@ namespace FactorioSave
         private async void InitializeDriveSetupStep()
         {
             //Check if the user is logged in to Google Drive
-            if (!await _googleDriveService.IsLoggedIn())
+            if (!await _googleDriveService.IsLoggedInFn())
             {
                 MessageBox.Show("You must be logged in to Google Drive to continue.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;

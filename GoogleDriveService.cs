@@ -41,6 +41,13 @@ namespace FactorioSave
         private UserCredential _credential;
         private CancellationTokenSource _cancellationTokenSource;
 
+        private bool _isLoggedIn = false;
+        public bool IsLoggedIn
+        {
+            get { return _isLoggedIn; }
+            set { _isLoggedIn = value; }
+        }
+
         public UserCredential Credentials 
         {
             get { return _credential; }
@@ -69,16 +76,16 @@ namespace FactorioSave
         /// <summary>   
         /// Checks if the user has granted access to the Google Drive API   
         /// </summary>
-        public async Task<bool> IsLoggedIn()
+        public async Task<bool> IsLoggedInFn()
         {
             try
             {
                 // Ensure the service is initialized
                 if (_driveService == null)
                 {   
-                    if (!await InitializeAsync())
-                        return false;
+                    return false;
                 }
+                
 
                 // Check if we can access the Drive API
                 var request = _driveService.Files.List();
@@ -101,11 +108,10 @@ namespace FactorioSave
         {
             try
             {
-                // Ensure the service is initialized
-                if (_driveService == null)
+                // Ensure the service is initialized before proceeding
+                if (!await EnsureInitialized())
                 {
-                    if (!await InitializeAsync())
-                        return null;
+                    return null;
                 }
 
                 // Make sure the folder exists
@@ -147,9 +153,8 @@ namespace FactorioSave
             {
                 // Ensure the service is initialized
                 if (_driveService == null)
-                {
-                    if (!await InitializeAsync())
-                        return false;
+                {   
+                    return false;
                 }
 
                 // Try to get information about the folder
@@ -200,7 +205,7 @@ namespace FactorioSave
                 _factorioFolderId = folderId;
             }
         }
-
+        //TODO: CHANGE all requestGoogleLogin to 
         /// <summary>
         /// Gets information about a specific save file from Google Drive
         /// </summary>
@@ -209,11 +214,10 @@ namespace FactorioSave
             try
             {
                 System.Diagnostics.Debug.WriteLine($"Getting save file info, filename:{fileName}");
-                // Ensure the service is initialized
-                if (_driveService == null)
+                // Ensure the service is initialized before proceeding
+                if (!await EnsureInitialized())
                 {
-                    if (!await InitializeAsync())
-                        return null;
+                    return null;
                 }
 
                 // Find the file ID
@@ -255,10 +259,9 @@ namespace FactorioSave
             try
             {
                 // Ensure the service is initialized
-                if (_driveService == null)
+                if (!await EnsureInitialized())
                 {
-                    if (!await IsLoggedIn())
-                        return null;
+                    return null;
                 }
 
                 // Make sure the folder exists
@@ -286,7 +289,7 @@ namespace FactorioSave
         /// <summary>
         /// Initializes the Google Drive service
         /// </summary>
-        public async Task<bool> InitializeAsync()
+        public async Task<bool> RequestGoogleLogin()
         {
             Console.WriteLine("Initializing Google Drive service...");
             try
@@ -336,10 +339,9 @@ namespace FactorioSave
 
 
 
-                
-
 
      
+
 
                 return true;
             }
@@ -492,8 +494,7 @@ namespace FactorioSave
                 // Ensure the service is initialized
                 if (_driveService == null)
                 {
-                    if (!await InitializeAsync())
-                        return null;
+                    return null;
                 }
 
                 // Find the file ID
@@ -560,11 +561,10 @@ namespace FactorioSave
             {
                 System.Diagnostics.Debug.WriteLine($"Uploading save {saveFilePath}");
 
-                // Ensure the service is initialized
-                if (_driveService == null)
+                // Ensure the service is initialized before proceeding
+                if (!await EnsureInitialized())
                 {
-                    if (!await InitializeAsync())
-                        return false;
+                    return false;
                 }
 
                 // Make sure the folder exists
@@ -634,7 +634,7 @@ namespace FactorioSave
                 Console.WriteLine($"Error uploading save: {ex.Message}");
                 return false;
             }
-}
+        }
 
         /// <summary>
         /// Downloads a save file from Google Drive
@@ -643,11 +643,10 @@ namespace FactorioSave
         {
             try
             {
-                // Ensure the service is initialized
-                if (_driveService == null)
+                // Ensure the service is initialized before proceeding
+                if (!await EnsureInitialized())
                 {
-                    if (!await InitializeAsync())
-                        return false;
+                    return false;
                 }
 
                 // Find the file ID
@@ -687,8 +686,8 @@ namespace FactorioSave
                 // Ensure the service is initialized
                 if (_driveService == null)
                 {
-                    if (!await InitializeAsync())
-                        return new DriveFileLocation { Path = "Unknown location" };
+                   
+                    return new DriveFileLocation { Path = "Unknown location" };
                 }
 
                 // Get the file to find its parents, owner and modified time
@@ -743,8 +742,7 @@ namespace FactorioSave
                 // Ensure the service is initialized
                 if (_driveService == null)
                 {
-                    if (!await InitializeAsync())
-                        return new LinkStatus { Status = LinkAccessStatus.Invalid, Message = "Drive service not initialized" };
+                    return new LinkStatus { Status = LinkAccessStatus.Invalid, Message = "Drive service not initialized" };
                 }
 
                 // Try to get information about the folder
@@ -874,8 +872,7 @@ namespace FactorioSave
                 // Ensure the service is initialized
                 if (_driveService == null)
                 {
-                    if (!await InitializeAsync())
-                        return new List<SaveFileInfo>();
+                    return new List<SaveFileInfo>();
                 }
 
                 // Make sure the folder exists
@@ -916,6 +913,28 @@ namespace FactorioSave
                 Console.WriteLine($"Error getting save files list: {ex.Message}");
                 return new List<SaveFileInfo>();
             }
+        }
+
+        /// <summary>
+        /// Ensures that the Google Drive service is initialized when needed
+        /// Returns true if already initialized or initialization was successful
+        /// </summary>
+        public async Task<bool> EnsureInitialized()
+        {
+            // If already initialized, return true
+            if (_driveService != null)
+                return true;
+                
+            // Otherwise, request login
+            return await RequestGoogleLogin();
+        }
+
+        /// <summary>
+        /// Checks if the Drive service is currently initialized
+        /// </summary>
+        public bool IsInitialized()
+        {
+            return _driveService != null;
         }
     }
 
@@ -958,5 +977,5 @@ namespace FactorioSave
     /// <summary>
     /// Class to hold information about a save file
     /// </summary>
-    
+    /// 
 }
