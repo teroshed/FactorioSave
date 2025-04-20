@@ -258,7 +258,7 @@ namespace FactorioSave
                     // Check if we need to update the timestamp comparisons
                     if ((DateTime.Now - _localFileLastCheckedTime).TotalMinutes > 1)
                     {
-                        await UpdateLastModifiedLocallyAsync();
+                        UpdateLastModifiedLocallyAsync();
                         _localFileLastCheckedTime = DateTime.Now;
                     }
 
@@ -327,7 +327,7 @@ namespace FactorioSave
                     lblStatus.Text = "Status: Download successful!";
                     lblSimpleStatus.Text = "Download successful!";
                     lblSimpleStatus.ForeColor = System.Drawing.Color.FromArgb(92, 184, 92); // Green
-                    await UpdateLastModifiedLocallyAsync();
+                    UpdateLastModifiedLocallyAsync();
                     UpdateLastLocalDisplay();
                 }
 
@@ -450,7 +450,7 @@ namespace FactorioSave
 
         private async void UpdateTimeLabels()
         {
-            await UpdateLastModifiedLocallyAsync();
+            UpdateLastModifiedLocallyAsync();
 
             UpdateLastLocalDisplay();
 
@@ -613,7 +613,7 @@ namespace FactorioSave
             try
             {
                 // Get local file time
-                await UpdateLastModifiedLocallyAsync();
+                UpdateLastModifiedLocallyAsync();
 
                 // Get drive file time
                 await UpdateLastModifiedDriveAsync();
@@ -1790,7 +1790,7 @@ namespace FactorioSave
             }
         }
 
-        private async Task UpdateLastModifiedLocallyAsync()
+        private void UpdateLastModifiedLocallyAsync()
         {
             _lastModifiedLocally = File.GetLastWriteTime(_factorioMonitor.GetSavePath());
         }
@@ -1800,10 +1800,14 @@ namespace FactorioSave
         {
             _ = Task.Run(async () =>
             {
-                _ = UpdateLastModifiedDriveAsync();
-                await CompareModificationTimesAsync();
-                _localFileLastCheckedTime = DateTime.Now;
+                if(await _googleDriveService.IsLoggedInFn())
+                {
+                    _ = UpdateLastModifiedDriveAsync();
+                    await CompareModificationTimesAsync();
+                    _localFileLastCheckedTime = DateTime.Now;
 
+                }
+                
             });
             
         }

@@ -109,7 +109,7 @@ namespace FactorioSave
             try
             {
                 // Ensure the service is initialized before proceeding
-                if (!await EnsureInitialized())
+                if (!await IsLoggedInFn())
                 {
                     return null;
                 }
@@ -215,7 +215,7 @@ namespace FactorioSave
             {
                 System.Diagnostics.Debug.WriteLine($"Getting save file info, filename:{fileName}");
                 // Ensure the service is initialized before proceeding
-                if (!await EnsureInitialized())
+                if (!await IsLoggedInFn())
                 {
                     return null;
                 }
@@ -259,7 +259,7 @@ namespace FactorioSave
             try
             {
                 // Ensure the service is initialized
-                if (!await EnsureInitialized())
+                if (!await IsLoggedInFn())
                 {
                     return null;
                 }
@@ -562,7 +562,7 @@ namespace FactorioSave
                 System.Diagnostics.Debug.WriteLine($"Uploading save {saveFilePath}");
 
                 // Ensure the service is initialized before proceeding
-                if (!await EnsureInitialized())
+                if (!await IsLoggedInFn())
                 {
                     return false;
                 }
@@ -644,7 +644,7 @@ namespace FactorioSave
             try
             {
                 // Ensure the service is initialized before proceeding
-                if (!await EnsureInitialized())
+                if (!await IsLoggedInFn())
                 {
                     return false;
                 }
@@ -919,15 +919,7 @@ namespace FactorioSave
         /// Ensures that the Google Drive service is initialized when needed
         /// Returns true if already initialized or initialization was successful
         /// </summary>
-        public async Task<bool> EnsureInitialized()
-        {
-            // If already initialized, return true
-            if (_driveService != null)
-                return true;
-                
-            // Otherwise, request login
-            return await RequestGoogleLogin();
-        }
+        
 
         /// <summary>
         /// Checks if the Drive service is currently initialized
