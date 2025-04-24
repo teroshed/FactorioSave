@@ -802,7 +802,7 @@ namespace FactorioSave
         {
             _setupWizard = new SetupWizard(_googleDriveService, _factorioMonitor);
 
-            if (_setupWizard.ShowDialog() == DialogResult.OK)
+            if (_setupWizard != null && _setupWizard.ShowDialog() == DialogResult.OK)
             {
                 // Update UI after wizard completes
                 UpdateSaveFileDisplay();

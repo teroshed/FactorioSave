@@ -1,4 +1,4 @@
-﻿    using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -86,7 +86,6 @@ namespace FactorioSave
 
         private async Task MonitorClipboard(CancellationToken cancellationToken)
         {
-            string previousClipboardText = "";
 
             try
             {
@@ -284,14 +283,22 @@ namespace FactorioSave
             // Hide all steps
             foreach (var panel in wizardSteps)
             {
-                panel.Visible = false;
-                panelMain.Controls.Remove(panel);
+                if (panel != null)
+                {
+                    panel.Visible = false;
+                    panelMain.Controls.Remove(panel);
+                }
+                
             }
 
             // Show the requested step
-            CurrentStep = step;
-            panelMain.Controls.Add(wizardSteps[CurrentStep]);
-            wizardSteps[CurrentStep].Visible = true;
+            if (wizardSteps[CurrentStep] != null)
+            {
+                CurrentStep = step;
+                panelMain.Controls.Add(wizardSteps[CurrentStep]);
+                wizardSteps[CurrentStep].Visible = true;
+            }
+            
 
             // Update navigation buttons
             btnBack.Enabled = CurrentStep > 0;
@@ -407,8 +414,11 @@ namespace FactorioSave
                     return;
                 }
                 System.Diagnostics.Debug.WriteLine("Drive link isn't in clipboard");
-                txtFolderLink.Text = String.Empty;
-                radioNewFolder.Checked = true;
+                if(txtFolderLink != null)
+                    txtFolderLink.Text = String.Empty;
+                if(radioNewFolder != null)
+                    radioNewFolder.Checked = true;
+                if(radioExistingFolder != null)
                 radioExistingFolder.Checked = false;
 
 
@@ -655,6 +665,17 @@ namespace FactorioSave
         {
             try
             {
+                // Check if user is logged in to Google Drive before proceeding
+                if (! await _googleDriveService.IsLoggedInFn())
+                {
+                    MessageBox.Show(
+                        "You need to log in to your Google account before completing the setup. Please log in and try again.",
+                        "Login Required",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                    return;
+                }
+
                 // 1. Set the selected save file
                 _factorioMonitor.SaveFileName = selectedSaveFile;
 
@@ -689,6 +710,10 @@ namespace FactorioSave
 
                 // Save settings
                 appSettings.SaveSettings();
+
+                // Close the dialog with success
+                this.DialogResult = DialogResult.OK;
+                this.Close();
             }
             catch (Exception ex)
             {

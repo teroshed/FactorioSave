@@ -51,3 +51,7 @@ C:\Users\danik\source\repos\FactorioSave\obj\Debug\FactorioSave.csproj.CoreCompi
 C:\Users\danik\source\repos\FactorioSave\obj\Debug\FactorioSave.csproj.CopyComplete
 C:\Users\danik\source\repos\FactorioSave\obj\Debug\FactorioSave.exe
 C:\Users\danik\source\repos\FactorioSave\obj\Debug\FactorioSave.pdb
+C:\Coding\FactorioSave\obj\Debug\FactorioSave.MainForm.resources
+C:\Coding\FactorioSave\bin\Debug\Google.Apis.Discovery.v1.dll
+C:\Coding\FactorioSave\bin\Debug\Google.Apis.Discovery.v1.pdb
+C:\Coding\FactorioSave\bin\Debug\Google.Apis.Discovery.v1.xml
