@@ -21,6 +21,7 @@ namespace FactorioSave
         // Last used folder link
         public string LastSharedFolderLink { get; set; } = string.Empty;
 
+        public Boolean SharePublicly { get; set; } = false;
         // Settings file path
         private static readonly string SettingsFilePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),

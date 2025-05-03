@@ -64,6 +64,7 @@ namespace FactorioSave
         private Panel panelStatusBar;
         private CheckBox chkAutoSync;
 
+        private CheckBox chkSharePublic; 
 
 
         private bool _isSimplifiedMode = true;
@@ -639,7 +640,7 @@ namespace FactorioSave
             // Large sync button
             btnLargeSync = new Button();
             btnLargeSync.Size = new Size(300, 200);
-            btnLargeSync.Location = new Point((this.ClientSize.Width - 300) / 2, 120);
+            btnLargeSync.Location = new Point((this.ClientSize.Width - 300) / 2, 100);
             btnLargeSync.Text = "⟲ SYNC";
             btnLargeSync.Font = new Font("Segoe UI", 36F, FontStyle.Bold);
             btnLargeSync.FlatStyle = FlatStyle.Flat;
@@ -651,7 +652,7 @@ namespace FactorioSave
             // Wizard button
             btnWizard = new Button();
             btnWizard.Size = new Size(140, 60);
-            btnWizard.Location = new Point(20, 340);
+            btnWizard.Location = new Point(20, 330);
             btnWizard.Text = "✨ Setup Wizard";
             btnWizard.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
             btnWizard.FlatStyle = FlatStyle.Flat;
@@ -663,7 +664,7 @@ namespace FactorioSave
             // More Details button
             btnMoreDetails = new Button();
             btnMoreDetails.Size = new Size(140, 60);
-            btnMoreDetails.Location = new Point(this.ClientSize.Width - 160, 340);
+            btnMoreDetails.Location = new Point(this.ClientSize.Width - 160, 330);
             btnMoreDetails.Text = "More Details ▼";
             btnMoreDetails.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
             btnMoreDetails.FlatStyle = FlatStyle.Flat;
@@ -676,7 +677,7 @@ namespace FactorioSave
             lblCurrentSaveSimple = new Label();
             lblCurrentSaveSimple.AutoSize = false;
             lblCurrentSaveSimple.Size = new Size(600, 30);
-            lblCurrentSaveSimple.Location = new Point((this.ClientSize.Width - 600) / 2, 80);
+            lblCurrentSaveSimple.Location = new Point((this.ClientSize.Width - 600) / 2, 60);
             lblCurrentSaveSimple.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
             lblCurrentSaveSimple.ForeColor = Color.FromArgb(41, 50, 65);
             lblCurrentSaveSimple.Text = "No save selected";
@@ -727,7 +728,7 @@ namespace FactorioSave
             panelSimplified.Controls.Add(lblCurrentSaveSimple);
             panelSimplified.Controls.Add(lblSimpleStatus);
             panelSimplified.Controls.Add(lblLastSyncSimple);
-
+            panelSimplified.Controls.Add(chkSharePublic); // Add this line
             // Add panels to the form
             this.Controls.Add(panelSimplified);
             this.Controls.Add(panelStatusBar);

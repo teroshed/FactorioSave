@@ -262,14 +262,9 @@ namespace FactorioSave
             LoadSaveFiles();
         }
 
-        private async void InitializeDriveSetupStep()
+        private void InitializeDriveSetupStep()
         {
-            //Check if the user is logged in to Google Drive
-            if (!await _googleDriveService.IsLoggedInFn())
-            {
-                MessageBox.Show("You must be logged in to Google Drive to continue.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
+            
 
             panelDriveSetup = new Panel();
             panelDriveSetup.Dock = DockStyle.Fill;
@@ -292,7 +287,7 @@ namespace FactorioSave
                 "You can create a new folder or use an existing shared folder.";
 
             radioNewFolder = new RadioButton();
-            radioNewFolder.Text = "Create a new 'FactorioSaves' folder on my Google Drive";
+            radioNewFolder.Text = "Create or use 'FactorioSaves' folder on my Google Drive";
             radioNewFolder.Font = new Font("Segoe UI", 11F);
             radioNewFolder.AutoSize = true;
             radioNewFolder.Checked = true;
@@ -328,11 +323,13 @@ namespace FactorioSave
             lblLinkStatus.Text = "Enter a folder link to validate";
 
             chkSharePublic = new CheckBox();
-            chkSharePublic.Text = "Make this folder publicly accessible (allows other players to access saves)";
-            chkSharePublic.Font = new Font("Segoe UI", 11F);
+            chkSharePublic.Text = "Share save publicly";
             chkSharePublic.AutoSize = true;
-            chkSharePublic.Checked = true;
-
+            chkSharePublic.Font = new Font("Segoe UI", 9F);
+            chkSharePublic.ForeColor = Color.FromArgb(80, 80, 80);
+            chkSharePublic.Location = new Point(40, 390); // Indented position
+            chkSharePublic.Checked = false;
+            chkSharePublic.CheckedChanged += chkSharePublic_CheckedChanged;
             // Add controls
             panelDriveSetup.Controls.Add(lblDriveSetupTitle);
             panelDriveSetup.Controls.Add(lblDriveSetupText);
@@ -341,7 +338,7 @@ namespace FactorioSave
             panelDriveSetup.Controls.Add(txtFolderLink);
             panelDriveSetup.Controls.Add(btnValidateLink);
             panelDriveSetup.Controls.Add(lblLinkStatus);
-            panelDriveSetup.Controls.Add(chkSharePublic);
+            // panelDriveSetup.Controls.Add(chkSharePublic);
 
             // Position controls
             lblDriveSetupTitle.Location = new Point(20, 80);
@@ -351,10 +348,12 @@ namespace FactorioSave
             txtFolderLink.Location = new Point(40, 250);
             btnValidateLink.Location = new Point(500, 250);
             lblLinkStatus.Location = new Point(40, 280);
-            chkSharePublic.Location = new Point(20, 310);
+            // chkSharePublic.Location = new Point(20, 310);
 
             CheckClipboardForDriveLink();
         }
+
+        
 
         
 

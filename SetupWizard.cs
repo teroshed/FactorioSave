@@ -60,7 +60,7 @@ namespace FactorioSave
             InitializeWizardSteps();
 
 
-            InitializeTimers();
+            // InitializeTimers();
 
             StartMonitoringClipboard();
 
@@ -156,22 +156,22 @@ namespace FactorioSave
             }));
         }
 
-        private async void InitializeTimers()
-        {
-            if (this.components == null)
-            {
-                this.components = new System.ComponentModel.Container();
-            }
+        // private void InitializeTimers()
+        // {
+        //     if (this.components == null)
+        //     {
+        //         this.components = new System.ComponentModel.Container();
+        //     }
 
-            _timer05Seconds = new System.Windows.Forms.Timer(this.components);
-            _timer05Seconds.Interval = 500;
-            _timer05Seconds.Tick += new EventHandler(On05SecondsTimer);
-            _timer05Seconds.Start();
-        }
+        //     _timer05Seconds = new System.Windows.Forms.Timer(this.components);
+        //     _timer05Seconds.Interval = 500;
+        //     _timer05Seconds.Tick += new EventHandler(On05SecondsTimer);
+        //     _timer05Seconds.Start();
+        // }
 
-        private void On05SecondsTimer(object sender, EventArgs e)
-        {
-        }
+        // private void On05SecondsTimer(object sender, EventArgs e)
+        // {
+        // }
 
 
 
@@ -492,7 +492,7 @@ namespace FactorioSave
                 case 2: // Drive Setup
                     // Collect Google Drive settings
                     createNewFolder = radioNewFolder.Checked;
-                    sharePublicly = chkSharePublic.Checked;
+                    // sharePublicly = chkSharePublic.Checked;
 
                     if (!createNewFolder)
                     {

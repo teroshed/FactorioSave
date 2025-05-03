@@ -106,6 +106,13 @@ namespace FactorioSave
             UpdateButtonStates();
         }
 
+        private void chkSharePublic_CheckedChanged(object sender, EventArgs e)
+        {
+            // Set your sharing preference based on the checkbox state
+            _appSettings.SharePublicly = chkSharePublic.Checked;
+            _appSettings.SaveSettings(); // Save the setting
+        }
+
         private void InitializeDisplay()
         {
             bool isEmpty = string.IsNullOrEmpty(_sharingLink);
